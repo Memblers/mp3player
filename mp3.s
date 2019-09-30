@@ -1,4 +1,5 @@
 .export _mp3_command
+.export _cv5000
 .import popa
 
 .macro beep
@@ -19,7 +20,8 @@
    temp_hi: .res 1
    received: .res 1
    temp_a:  .res 1
-   v5000:   .res 1
+   v5000:
+   _cv5000: .res 1
    count_hi: .res 1
    
    x_param: .res 1
