@@ -1,8 +1,10 @@
+;#resource "output.bin"
 ;#resource "gtmp3.cfg"
 ;#define CFGFILE gtmp3.cfg
 
 .export _mp3_command
 .export _cv5000
+.export _mp3_tags, _mp3_address, _mp3_bank
 .import popa
 
 .macro beep
@@ -30,7 +32,13 @@
    x_param: .res 1
 
 .segment "TAGDATA"
- .byte $7D,$8D,$7D,$8D
+_mp3_tags:
+ .incbin "output.bin"
+_mp3_address:
+ .incbin "output-address.bin"
+_mp3_bank:
+ .incbin "output-bank.bin"
+ 
 
 .segment "CODE"
 

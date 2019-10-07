@@ -1,8 +1,11 @@
+//#resource "output-bank.bin"
+//#resource "output-address.bin"
+//#resource "output.bin"
 //#resource "gtmp3.cfg"
 //#define CFGFILE gtmp3.cfg
 
 //#include <stdlib.h>
-//#include <string.h>
+#include <string.h>
 
 
 // include NESLIB header
@@ -43,12 +46,19 @@ typedef enum
   } CMD;
 
 void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char param2);
+void select_tag(short tracknumber);
+
+
 
 extern byte cv5000;
 #pragma zpsym ("cv5000")
+extern byte mp3_tags[];
+extern unsigned int mp3_address[];
+extern byte mp3_bank[];
 
 byte pad1;
 byte spr_id;
+unsigned int current_track = 0;
   
 
 /*{pal:"nes",layout:"nes"}*/
@@ -74,16 +84,25 @@ void setup_graphics() {
   pal_all(PALETTE);
 }
 
+
 void main(void)
 {
   cv5000 = 0xA0;
   setup_graphics();
+  //select_tag(28);
 
   // draw message  
   vram_adr(NTADR_A(2,3));
   vram_write("MI MEDIA PLAYER",15);
   vram_adr(NTADR_A(2,4));
   vram_write(__DATE__ " - "__TIME__, 22);
+  vram_adr(NTADR_A(2,6));
+  vram_write("L/R to change tracks",20);
+  vram_adr(NTADR_A(2,7));
+  vram_write("U/D to change volume",20);
+  vram_adr(NTADR_A(2,8));
+  vram_write("Select to enter shuffle mode",28);
+  
   // enable rendering
   ppu_on_all();
   // infinite loop
@@ -93,9 +112,17 @@ void main(void)
     pad1 = pad_trigger(0);    
     
     if (pad1 & PAD_RIGHT)
+    {
       mp3_command(CMD_NEXT_SONG,0,0);    
-    if (pad1 & PAD_LEFT)    
+      ++current_track;
+      select_tag(current_track);
+    }
+    if (pad1 & PAD_LEFT)
+    {
       mp3_command(CMD_PREVIOUS_SONG,0,0);    
+      --current_track;
+      select_tag(current_track);
+    }
     if (pad1 & PAD_SELECT)
       mp3_command(CMD_SHUFFLE_PLAY,0,0);    
     if (pad1 & PAD_UP)
@@ -114,5 +141,38 @@ void main(void)
     
   }
 }
+
+void select_tag(short tracknumber)
+{  
+  byte text_length;
+  unsigned int index;
+  
+  ppu_off();
+  
+  vram_adr(NTADR_A(0,14));
+  vram_fill(0,0x100);
+  
+  index = mp3_address[tracknumber << 1];
+  vram_adr(NTADR_A(2,14));
+  text_length = strlen((unsigned char *)index);
+  vram_write((unsigned char *)index,text_length+=1);
+  index += text_length;
+  vram_adr(NTADR_A(2,15));
+  text_length = strlen((unsigned char *)index);
+  vram_write((unsigned char *)index,text_length+=1);
+  index += text_length;
+  vram_adr(NTADR_A(2,16));
+  text_length = strlen((unsigned char *)index);
+  vram_write((unsigned char *)index,text_length+=1);
+  index += text_length;
+  vram_adr(NTADR_A(2,17));
+  text_length = 4;
+  vram_write((unsigned char *)index,text_length);
+  
+  ppu_on_all();
+  
+}
+  
+
 
 //#link "mp3.s"
