@@ -1,3 +1,4 @@
+//#resource "gtmp3.cfg"
 //#define CFGFILE gtmp3.cfg
 
 //#include <stdlib.h>

@@ -1,3 +1,6 @@
+;#resource "gtmp3.cfg"
+;#define CFGFILE gtmp3.cfg
+
 .export _mp3_command
 .export _cv5000
 .import popa
