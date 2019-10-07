@@ -143,54 +143,34 @@ void main(void)
   }
 }
 
+
+#define print_tag(line, length) \
+  {    \
+    memset(ppu_buffer, 0, 34); \
+    set_vram_update(NULL); \
+    ppu_buffer[0] = MSB(NTADR_A(2,line))|NT_UPD_HORZ; \
+    ppu_buffer[1] = LSB(NTADR_A(2,line)); \
+    text_length = strlen((unsigned char *)index) + 1; \
+    ppu_buffer[2] = length; \
+    strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index)); \
+    ppu_buffer[3 + length] = NT_UPD_EOF; \
+    index += text_length; \
+    set_vram_update(ppu_buffer); \
+    ppu_wait_nmi(); \
+  };
+
 void select_tag(short tracknumber)
 {  
+  
   byte text_length;
-  unsigned int index;
+  unsigned int index;  
   
-  //ppu_off();
-  
-//  vram_adr(NTADR_A(0,14));
-//  vram_fill(0,0x100);
-  
-  index = mp3_address[tracknumber << 1];
-  
-  memset(ppu_buffer, 0, 34);
-  ppu_buffer[0] = MSB(NTADR_A(2,15))|NT_UPD_HORZ;
-  ppu_buffer[1] = LSB(NTADR_A(2,15));
-  text_length = strlen((unsigned char *)index) + 1;
-  ppu_buffer[2] = 30;
-  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
-  ppu_buffer[3 + 30] = NT_UPD_EOF;
-  index += text_length;
-  set_vram_update(ppu_buffer);
-
-  ppu_wait_nmi();
-  set_vram_update(NULL);
-  
-  memset(ppu_buffer, 0, 34);
-  ppu_buffer[0] = MSB(NTADR_A(2,16))|NT_UPD_HORZ;
-  ppu_buffer[1] = LSB(NTADR_A(2,16));
-  text_length = strlen((unsigned char *)index) + 1;
-  ppu_buffer[2] = 30;
-  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
-  ppu_buffer[3 + 30] = NT_UPD_EOF;
-  index += text_length;
-  set_vram_update(ppu_buffer);
-  
-  ppu_wait_nmi();
-  set_vram_update(NULL);
-  
-  memset(ppu_buffer, 0, 34);
-  ppu_buffer[0] = MSB(NTADR_A(2,17))|NT_UPD_HORZ;
-  ppu_buffer[1] = LSB(NTADR_A(2,17));
-  text_length = strlen((unsigned char *)index) + 1;
-  ppu_buffer[2] = 30;
-  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
-  ppu_buffer[3 + 30] = NT_UPD_EOF;
-  index += text_length;
-  set_vram_update(ppu_buffer);
+  index = mp3_address[tracknumber << 1];  
     
+  print_tag(15,30)
+  print_tag(16,30)  
+  print_tag(17,30)
+  print_tag(18,4)
   
   /*
   vram_write((unsigned char *)index,text_length+=1);
