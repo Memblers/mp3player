@@ -25,6 +25,10 @@
    count_hi: .res 1
    
    x_param: .res 1
+
+.segment "TAGDATA"
+ .byte $7D,$8D,$7D,$8D
+
 .segment "CODE"
 
 ;----
