@@ -56,6 +56,7 @@ extern byte mp3_tags[];
 extern unsigned int mp3_address[];
 extern byte mp3_bank[];
 
+byte ppu_buffer[128];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 0;
@@ -147,14 +148,51 @@ void select_tag(short tracknumber)
   byte text_length;
   unsigned int index;
   
-  ppu_off();
+  //ppu_off();
   
-  vram_adr(NTADR_A(0,14));
-  vram_fill(0,0x100);
+//  vram_adr(NTADR_A(0,14));
+//  vram_fill(0,0x100);
   
   index = mp3_address[tracknumber << 1];
-  vram_adr(NTADR_A(2,14));
-  text_length = strlen((unsigned char *)index);
+  
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(2,15))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(2,15));
+  text_length = strlen((unsigned char *)index) + 1;
+  ppu_buffer[2] = 30;
+  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
+  ppu_buffer[3 + 30] = NT_UPD_EOF;
+  index += text_length;
+  set_vram_update(ppu_buffer);
+
+  ppu_wait_nmi();
+  set_vram_update(NULL);
+  
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(2,16))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(2,16));
+  text_length = strlen((unsigned char *)index) + 1;
+  ppu_buffer[2] = 30;
+  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
+  ppu_buffer[3 + 30] = NT_UPD_EOF;
+  index += text_length;
+  set_vram_update(ppu_buffer);
+  
+  ppu_wait_nmi();
+  set_vram_update(NULL);
+  
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(2,17))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(2,17));
+  text_length = strlen((unsigned char *)index) + 1;
+  ppu_buffer[2] = 30;
+  strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index));
+  ppu_buffer[3 + 30] = NT_UPD_EOF;
+  index += text_length;
+  set_vram_update(ppu_buffer);
+    
+  
+  /*
   vram_write((unsigned char *)index,text_length+=1);
   index += text_length;
   vram_adr(NTADR_A(2,15));
@@ -168,6 +206,7 @@ void select_tag(short tracknumber)
   vram_adr(NTADR_A(2,17));
   text_length = 4;
   vram_write((unsigned char *)index,text_length);
+  */
   
   ppu_on_all();
   
