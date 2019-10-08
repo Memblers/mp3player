@@ -90,7 +90,6 @@ void main(void)
 {
   cv5000 = 0xA0;
   setup_graphics();
-  //select_tag(28);
 
   // draw message  
   vram_adr(NTADR_A(2,3));
@@ -106,6 +105,7 @@ void main(void)
   
   // enable rendering
   ppu_on_all();
+  select_tag(1);
   // infinite loop
   while(1)
   {
@@ -115,13 +115,13 @@ void main(void)
     if (pad1 & PAD_RIGHT)
     {
       ++current_track;
-      select_tag(current_track);
+      select_tag(current_track-1);
       mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
     }
     if (pad1 & PAD_LEFT)
     {
       --current_track;
-      select_tag(current_track);
+      select_tag(current_track-1);
       mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
     }
     if (pad1 & PAD_SELECT)
@@ -162,7 +162,7 @@ void select_tag(short tracknumber)
   byte text_length;
   unsigned int index;  
   
-  index = mp3_address[tracknumber << 1];  
+  index = mp3_address[tracknumber];  
     
   print_tag(15,30)
   print_tag(16,30)  
