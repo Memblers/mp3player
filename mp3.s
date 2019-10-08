@@ -95,12 +95,11 @@ mp3_send:
 ;----
    
 _mp3_command:
-	tax	; parameter 2
+	sta temp_y	; parameter 2
         jsr popa
-        stx temp_y
+        tax
         jsr popa
-        tay
-        ldx temp_y
+        ldy temp_y
         
 ;mp3_command:
 	pha

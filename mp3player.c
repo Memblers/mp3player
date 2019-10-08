@@ -114,15 +114,15 @@ void main(void)
     
     if (pad1 & PAD_RIGHT)
     {
-      mp3_command(CMD_NEXT_SONG,0,0);    
       ++current_track;
       select_tag(current_track);
+      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
     }
     if (pad1 & PAD_LEFT)
     {
-      mp3_command(CMD_PREVIOUS_SONG,0,0);    
       --current_track;
       select_tag(current_track);
+      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
     }
     if (pad1 & PAD_SELECT)
       mp3_command(CMD_SHUFFLE_PLAY,0,0);    
@@ -131,13 +131,10 @@ void main(void)
     if (pad1 & PAD_DOWN)
       mp3_command(CMD_VOLUME_DOWN,0,0);
     if (pad1 & PAD_A)
-      mp3_command(CMD_SELECT_EQ,1,1);
+      mp3_command(CMD_PLAY,1,1);
     if (pad1 & PAD_B)
     {
-      spr_id = 0;
-      mp3_command(CMD_SELECT_EQ,2,2);
-      spr_id = oam_spr(0x18,0x90,'C',2,spr_id);
-      mp3_command(CMD_SELECT_EQ,2,2);        
+      mp3_command(CMD_PAUSE,2,2);
     }     
     
   }
@@ -172,21 +169,6 @@ void select_tag(short tracknumber)
   print_tag(17,30)
   print_tag(18,4)
   
-  /*
-  vram_write((unsigned char *)index,text_length+=1);
-  index += text_length;
-  vram_adr(NTADR_A(2,15));
-  text_length = strlen((unsigned char *)index);
-  vram_write((unsigned char *)index,text_length+=1);
-  index += text_length;
-  vram_adr(NTADR_A(2,16));
-  text_length = strlen((unsigned char *)index);
-  vram_write((unsigned char *)index,text_length+=1);
-  index += text_length;
-  vram_adr(NTADR_A(2,17));
-  text_length = 4;
-  vram_write((unsigned char *)index,text_length);
-  */
   
   ppu_on_all();
   
