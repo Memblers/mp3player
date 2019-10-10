@@ -120,9 +120,12 @@ void main(void)
     }
     if (pad1 & PAD_LEFT)
     {
-      --current_track;
-      select_tag(current_track-1);
-      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      if (current_track >= 2)
+      {        
+        --current_track;
+        select_tag(current_track-1);
+        mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      }
     }
     if (pad1 & PAD_SELECT)
       mp3_command(CMD_SHUFFLE_PLAY,0,0);    
