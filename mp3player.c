@@ -123,6 +123,8 @@ void main(void)
       ++current_track;
       select_tag(current_track-1);
       mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      ppu_wait_nmi();
+      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
     }
     if (pad1 & PAD_LEFT)
     {
@@ -130,6 +132,8 @@ void main(void)
       {        
         --current_track;
         select_tag(current_track-1);
+        mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+        ppu_wait_nmi();
         mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
       }
     }

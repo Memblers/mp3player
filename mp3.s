@@ -5,7 +5,8 @@
 .export _mp3_command
 .export _cv5000, _reg5000
 .export _mp3_tags, _mp3_address, _mp3_bank
-.import popa
+.import popa, _ppu_wait_nmi
+
 
 _reg5000 = $5000
 
@@ -120,7 +121,9 @@ _mp3_command:
 	tya
 	jsr mp3_send
 	lda #$EF
-	jsr mp3_send
+	jsr mp3_send      
+                
+        
 	
 ;	ldy #1
 ;	jsr delay
