@@ -3,9 +3,11 @@
 ;#define CFGFILE gtmp3.cfg
 
 .export _mp3_command
-.export _cv5000
+.export _cv5000, _reg5000
 .export _mp3_tags, _mp3_address, _mp3_bank
 .import popa
+
+_reg5000 = $5000
 
 .macro beep
         lda #%10011100

@@ -50,7 +50,7 @@ void select_tag(short tracknumber);
 
 
 
-extern byte cv5000;
+extern byte cv5000, reg5000;
 #pragma zpsym ("cv5000")
 extern byte mp3_tags[];
 extern unsigned int mp3_address[];
@@ -59,7 +59,7 @@ extern byte mp3_bank[];
 byte ppu_buffer[128];
 byte pad1;
 byte spr_id;
-unsigned int current_track = 0;
+unsigned int current_track = 1;
   
 
 /*{pal:"nes",layout:"nes"}*/
@@ -89,6 +89,7 @@ void setup_graphics() {
 void main(void)
 {
   cv5000 = 0xA0;
+  reg5000 = 0xA0;
   setup_graphics();
 
   // draw message  
@@ -103,9 +104,14 @@ void main(void)
   vram_adr(NTADR_A(2,8));
   vram_write("Select to enter shuffle mode",28);
   
+  
   // enable rendering
   ppu_on_all();
-  select_tag(1);
+  
+  // start playing
+  select_tag(0);
+  mp3_command(CMD_SELECT_MP3_FOLDER,0,1);  
+
   // infinite loop
   while(1)
   {
