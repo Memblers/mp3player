@@ -17,6 +17,14 @@
 // link the pattern table into CHR ROM
 //#link "chr_generic.s"
 
+// offsets inside the binary data section of tag structure
+#define TDB_SECONDS		0
+#define	TDB_NTSC_FRAMES		4
+#define TDB_NTSC_BAR_128 	8
+#define TDB_NTSC_BAR_192 	10
+#define TDB_PAL_FRAMES 		12
+#define TDB_PAL_BAR_128 	16
+#define TDB_PAL_BAR_192 	18
 
 typedef enum
 {
@@ -56,11 +64,19 @@ extern byte mp3_tags[];
 extern unsigned int mp3_address[];
 extern byte mp3_bank[];
 
+void hex_display(byte value, byte x_position, byte y_position);
+
+
 byte ppu_buffer[128];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 1;
 byte playing = 1;
+unsigned int tag_data_index;
+byte temp;
+
+const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
+                           '9', 'A', 'B', 'C', 'D', 'E', 'F' };
   
 
 /*{pal:"nes",layout:"nes"}*/
@@ -153,8 +169,14 @@ void main(void)
     
     if (playing)
     {
+      mp3_tags[tag_data_index];
       
     }
+    
+    spr_id = 0;
+    hex_display((tag_data_index >> 8),0x10,0xa0);
+    hex_display((tag_data_index & 0xFF),0x20,0xa0);
+    hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
     
   }
 }
@@ -176,23 +198,25 @@ void main(void)
   };
 
 void select_tag(short tracknumber)
-{  
-  
+{    
   byte text_length;
   unsigned int index;  
   
   index = mp3_address[tracknumber];  
     
-  print_tag(15,30)
-  print_tag(16,30)  
-  print_tag(17,30)
-  print_tag(18,4)
-  
-  
-  ppu_on_all();
-  
+  print_tag(15,30);
+  print_tag(16,30);
+  print_tag(17,30);
+  print_tag(18,4);  
+  tag_data_index = index - 2;
 }
   
-
+void hex_display(byte value, byte x_position, byte y_position)
+{
+    temp = (value >> 4);
+    spr_id = oam_spr(x_position,y_position,hex_table[temp],2,spr_id);
+    temp = (value & 0x0F);
+    spr_id = oam_spr((x_position + 8),y_position,hex_table[temp],2,spr_id);
+}
 
 //#link "mp3.s"
