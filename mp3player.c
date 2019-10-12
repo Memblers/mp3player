@@ -60,6 +60,7 @@ byte ppu_buffer[128];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 1;
+byte playing = 1;
   
 
 /*{pal:"nes",layout:"nes"}*/
@@ -148,7 +149,12 @@ void main(void)
     if (pad1 & PAD_B)
     {
       mp3_command(CMD_PAUSE,2,2);
-    }     
+    }
+    
+    if (playing)
+    {
+      
+    }
     
   }
 }
