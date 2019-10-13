@@ -6,6 +6,7 @@
 
 //#include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 // include NESLIB header
@@ -79,6 +80,7 @@ unsigned long tag_frame_counter;
 byte auto_next = 0;
 unsigned long sprite_position = 0;
 unsigned long sprite_velocity = 0;
+unsigned long tag_seconds = 0;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -125,7 +127,7 @@ void main(void)
   vram_write("U/D to change volume",20);
   vram_adr(NTADR_A(2,8));
   vram_write("Select to enter shuffle mode",28);
-  vram_adr(NTADR_A(4,12));
+  vram_adr(NTADR_A(4,20));
   vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\0x02",25);
   
   
@@ -191,7 +193,7 @@ void main(void)
     
     spr_id = 0;
 
-    spr_id = oam_spr((sprite_position >> 16),95,0x01,2,spr_id);
+    spr_id = oam_spr((sprite_position >> 16),0x9F,0x01,2,spr_id);
     
     /*
     hex_display((sprite_velocity >> 8),0x20,0xa0);
@@ -214,8 +216,9 @@ void main(void)
 
 #define print_tag(line, length) \
   {    \
-    memset(ppu_buffer, 0, 34); \
+  \
     set_vram_update(NULL); \
+    memset(ppu_buffer, 0, 34); \
     ppu_buffer[0] = MSB(NTADR_A(2,line))|NT_UPD_HORZ; \
     ppu_buffer[1] = LSB(NTADR_A(2,line)); \
     text_length = strlen((unsigned char *)index) + 1; \
@@ -242,12 +245,30 @@ void select_tag(short tracknumber)
   print_tag(18,4);  
   index += 4;
   tag_data_index = index;
+  
   memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
   frame_counter = 0;  
+  
   memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
   sprite_velocity &= 0x0000FFFF;
-
   sprite_position = 0x00200000;
+  
+  memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
+  
+  set_vram_update(NULL);
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(16,22))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(16,22));
+  ppu_buffer[2] = 11;
+  sprintf(&ppu_buffer[3], "%2.2ld:", tag_seconds / 3600);
+  sprintf(&ppu_buffer[6], "%02.2ld:", tag_seconds / 60);
+  sprintf(&ppu_buffer[9], "%02.2ld", tag_seconds % 60);
+  ppu_buffer[3 + 11] = NT_UPD_EOF;
+  set_vram_update(ppu_buffer);
+  ppu_wait_nmi();
+  
+  
+  
 }
   
 void hex_display(byte value, byte x_position, byte y_position)
