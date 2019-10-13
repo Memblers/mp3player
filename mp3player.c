@@ -110,6 +110,8 @@ void setup_graphics() {
   oam_clear();
   // set palette colors
   pal_all(PALETTE);
+  
+  vram_adr(0x0000);  
   vram_write(chr_data, 0x2000);
 }
 
