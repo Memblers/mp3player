@@ -77,8 +77,8 @@ byte temp;
 unsigned long frame_counter;
 unsigned long tag_frame_counter;
 byte auto_next = 0;
-word sprite_position = 0;
-word sprite_velocity = 0;
+unsigned long sprite_position = 0;
+unsigned long sprite_velocity = 0;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -189,14 +189,14 @@ void main(void)
     
     spr_id = 0;
 
-    //spr_id = oam_spr((sprite_position >> 8),88,'!',2,spr_id);
+    spr_id = oam_spr((sprite_position >> 16),88,'!',2,spr_id);
     hex_display((sprite_velocity >> 8),0x20,0xa0);
     hex_display((sprite_velocity & 0xFF),0x10,0xa0);
     hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
-    hex_display((tag_frame_counter),0x40,0xB0);
-    hex_display((tag_frame_counter >> 8),0x30,0xB0);
-    hex_display((tag_frame_counter >> 16),0x20,0xB0);
-    hex_display((tag_frame_counter >> 24),0x10,0xB0);
+    hex_display((sprite_position),0x40,0xB0);
+    hex_display((sprite_position >> 8),0x30,0xB0);
+    hex_display((sprite_position >> 16),0x20,0xB0);
+    hex_display((sprite_position >> 24),0x10,0xB0);
     hex_display((frame_counter),0x40,0xB8);
     hex_display((frame_counter >> 8),0x30,0xB8);
     hex_display((frame_counter >> 16),0x20,0xB8);
@@ -239,7 +239,9 @@ void select_tag(short tracknumber)
   tag_data_index = index;
   memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
   frame_counter = 0;  
-  memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+  //memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+  //sprite_velocity &= 0x0000FFFF;
+  sprite_velocity = 0x480;
   sprite_position = 0;
 }
   
