@@ -65,10 +65,12 @@ extern byte mp3_tags[];
 extern unsigned int mp3_address[];
 extern byte mp3_bank[];
 
+void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
 
 
 byte ppu_buffer[128];
+byte time_buffer[16];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 1;
@@ -109,7 +111,6 @@ void setup_graphics() {
   pal_all(PALETTE);
 }
 
-
 void main(void)
 {
   cv5000 = 0xA0;
@@ -128,8 +129,7 @@ void main(void)
   vram_adr(NTADR_A(2,8));
   vram_write("Select to enter shuffle mode",28);
   vram_adr(NTADR_A(4,20));
-  vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\0x02",25);
-  
+  vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\0x02",25);  
   
   // enable rendering
   ppu_on_all();
@@ -178,6 +178,7 @@ void main(void)
     
     if (playing)
     {
+      update_time();
       sprite_position += sprite_velocity;
       ++frame_counter;
       if (frame_counter == tag_frame_counter)
@@ -257,18 +258,52 @@ void select_tag(short tracknumber)
   
   set_vram_update(NULL);
   memset(ppu_buffer, 0, 34);
-  ppu_buffer[0] = MSB(NTADR_A(16,22))|NT_UPD_HORZ;
-  ppu_buffer[1] = LSB(NTADR_A(16,22));
-  ppu_buffer[2] = 11;
-  sprintf(&ppu_buffer[3], "%2.2ld:", tag_seconds / 3600);
-  sprintf(&ppu_buffer[6], "%02.2ld:", tag_seconds / 60);
-  sprintf(&ppu_buffer[9], "%02.2ld", tag_seconds % 60);
-  ppu_buffer[3 + 11] = NT_UPD_EOF;
+  ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(7,22));
+  ppu_buffer[2] = 20;
+  sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
+  sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
+  sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
+  ppu_buffer[3 + 20] = NT_UPD_EOF;
   set_vram_update(ppu_buffer);
   ppu_wait_nmi();
   
+  memcpy(&time_buffer[0],&ppu_buffer[0],10);
+  time_buffer[2] = 7;
+  time_buffer[10] = NT_UPD_EOF;         
+         
+}
+
+void update_time()
+{
+  static byte timer = 0;
+  if (++timer != 60)
+    return;
+  timer = 0;
+  set_vram_update(NULL);
   
+  if (++time_buffer[9] == 0x3A)
+  {
+    time_buffer[9] = '0';
+    if (++time_buffer[8] == '6')
+    {
+      time_buffer[8] = '0';
+      if (++time_buffer[6] == 0x3A)
+      {
+        time_buffer[6] = '0';
+        if (++time_buffer[5] == '6')
+        {
+          time_buffer[5] = '0';
+          if (++time_buffer[3] == 0x3A)
+          {
+            time_buffer[3] = '0';
+          }
+        }
+      }
+    }
+  }
   
+  set_vram_update(time_buffer);  
 }
   
 void hex_display(byte value, byte x_position, byte y_position)
