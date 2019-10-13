@@ -125,6 +125,8 @@ void main(void)
   vram_write("U/D to change volume",20);
   vram_adr(NTADR_A(2,8));
   vram_write("Select to enter shuffle mode",28);
+  vram_adr(NTADR_A(4,12));
+  vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\0x02",25);
   
   
   // enable rendering
@@ -189,7 +191,9 @@ void main(void)
     
     spr_id = 0;
 
-    spr_id = oam_spr((sprite_position >> 16),88,'!',2,spr_id);
+    spr_id = oam_spr((sprite_position >> 16),95,0x01,2,spr_id);
+    
+    /*
     hex_display((sprite_velocity >> 8),0x20,0xa0);
     hex_display((sprite_velocity & 0xFF),0x10,0xa0);
     hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
@@ -201,6 +205,7 @@ void main(void)
     hex_display((frame_counter >> 8),0x30,0xB8);
     hex_display((frame_counter >> 16),0x20,0xB8);
     hex_display((frame_counter >> 24),0x10,0xB8);
+    */
     oam_hide_rest(spr_id);
     
   }
@@ -239,10 +244,10 @@ void select_tag(short tracknumber)
   tag_data_index = index;
   memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
   frame_counter = 0;  
-  //memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
-  //sprite_velocity &= 0x0000FFFF;
-  sprite_velocity = 0x480;
-  sprite_position = 0;
+  memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+  sprite_velocity &= 0x0000FFFF;
+
+  sprite_position = 0x00200000;
 }
   
 void hex_display(byte value, byte x_position, byte y_position)
