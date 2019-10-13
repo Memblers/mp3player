@@ -64,6 +64,7 @@ extern byte cv5000, reg5000;
 extern byte mp3_tags[];
 extern unsigned int mp3_address[];
 extern byte mp3_bank[];
+extern byte chr_data[];
 
 void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
@@ -109,6 +110,7 @@ void setup_graphics() {
   oam_clear();
   // set palette colors
   pal_all(PALETTE);
+  vram_write(chr_data, 0x2000);
 }
 
 void main(void)
