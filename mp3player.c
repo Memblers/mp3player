@@ -74,6 +74,11 @@ unsigned int current_track = 1;
 byte playing = 1;
 unsigned int tag_data_index;
 byte temp;
+unsigned long frame_counter;
+unsigned long tag_frame_counter;
+byte auto_next = 0;
+word sprite_position = 0;
+word sprite_velocity = 0;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -135,7 +140,7 @@ void main(void)
     ppu_wait_nmi();
     pad1 = pad_trigger(0);    
     
-    if (pad1 & PAD_RIGHT)
+    if ((pad1 & PAD_RIGHT) || auto_next )
     {
       ++current_track;
       select_tag(current_track-1);
@@ -169,14 +174,34 @@ void main(void)
     
     if (playing)
     {
-      mp3_tags[tag_data_index];
-      
+      sprite_position += sprite_velocity;
+      ++frame_counter;
+      if (frame_counter == tag_frame_counter)
+      {
+        auto_next = 1;
+        frame_counter = 0;
+      }
+      else
+      {
+        auto_next = 0;
+      }
     }
     
     spr_id = 0;
-    hex_display((tag_data_index >> 8),0x10,0xa0);
-    hex_display((tag_data_index & 0xFF),0x20,0xa0);
+
+    //spr_id = oam_spr((sprite_position >> 8),88,'!',2,spr_id);
+    hex_display((sprite_velocity >> 8),0x20,0xa0);
+    hex_display((sprite_velocity & 0xFF),0x10,0xa0);
     hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
+    hex_display((tag_frame_counter),0x40,0xB0);
+    hex_display((tag_frame_counter >> 8),0x30,0xB0);
+    hex_display((tag_frame_counter >> 16),0x20,0xB0);
+    hex_display((tag_frame_counter >> 24),0x10,0xB0);
+    hex_display((frame_counter),0x40,0xB8);
+    hex_display((frame_counter >> 8),0x30,0xB8);
+    hex_display((frame_counter >> 16),0x20,0xB8);
+    hex_display((frame_counter >> 24),0x10,0xB8);
+    oam_hide_rest(spr_id);
     
   }
 }
@@ -192,7 +217,6 @@ void main(void)
     ppu_buffer[2] = length; \
     strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index)); \
     ppu_buffer[3 + length] = NT_UPD_EOF; \
-    index += text_length; \
     set_vram_update(ppu_buffer); \
     ppu_wait_nmi(); \
   };
@@ -205,10 +229,18 @@ void select_tag(short tracknumber)
   index = mp3_address[tracknumber];  
     
   print_tag(15,30);
+  index += text_length;
   print_tag(16,30);
+  index += text_length;
   print_tag(17,30);
+  index += text_length;  
   print_tag(18,4);  
-  tag_data_index = index - 2;
+  index += 4;
+  tag_data_index = index;
+  memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
+  frame_counter = 0;  
+  memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+  sprite_position = 0;
 }
   
 void hex_display(byte value, byte x_position, byte y_position)
