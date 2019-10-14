@@ -2,6 +2,14 @@
 //#resource "output-address.bin"
 //#resource "output.bin"
 //#resource "gtmp3.cfg"
+//#resource "output.bin.0"
+//#resource "output.bin.1"
+//#resource "output.bin.2"
+//#resource "output.bin.3"
+//#resource "output.bin.4"
+//#resource "output.bin.5"
+//#resource "output.bin.6"
+//#resource "output.bin.7"
 //#define CFGFILE gtmp3.cfg
 
 //#include <stdlib.h>
@@ -59,7 +67,7 @@ void select_tag(short tracknumber);
 
 
 
-extern byte cv5000, reg5000;
+extern byte cv5000, reg5000, ROM_table[];
 #pragma zpsym ("cv5000")
 extern byte mp3_tags[];
 extern unsigned int mp3_address[];
@@ -76,6 +84,7 @@ byte pad1;
 byte spr_id;
 unsigned int current_track = 1;
 byte playing = 1;
+byte bank_select = 0;
 unsigned int tag_data_index;
 byte temp;
 unsigned long frame_counter;
@@ -239,7 +248,14 @@ void select_tag(short tracknumber)
   byte text_length;
   unsigned int index;  
   
-  index = mp3_address[tracknumber];  
+  index = mp3_address[tracknumber];
+  
+  bank_select = mp3_bank[tracknumber];
+  ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+  
+  cv5000 &= 0xF0;			// GTROM
+  cv5000 |= bank_select;
+  reg5000 = cv5000;
     
   print_tag(15,30);
   index += text_length;

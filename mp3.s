@@ -3,7 +3,7 @@
 ;#define CFGFILE gtmp3.cfg
 
 .export _mp3_command
-.export _cv5000, _reg5000
+.export _cv5000, _reg5000, _ROM_table
 .export _mp3_tags, _mp3_address, _mp3_bank
 .import popa, _ppu_wait_nmi
 
@@ -55,7 +55,19 @@ INES_SRAM   = 0 ; 1 = battery backed SRAM at $6000-7FFF
 _mp3_tags = $8000
 
 .segment "TAGDATA0"
- .incbin "output.bin"
+ .incbin "output.bin.0"
+.segment "TAGDATA1"
+ .incbin "output.bin.1"
+.segment "TAGDATA2"
+ .incbin "output.bin.2"
+.segment "TAGDATA3"
+ .incbin "output.bin.3"
+.segment "TAGDATA4"
+ .incbin "output.bin.4"
+.segment "TAGDATA5"
+ .incbin "output.bin.5"
+.segment "TAGDATA6"
+ .incbin "output.bin.6"
  
 .segment "RODATA"
 _mp3_address:
@@ -223,3 +235,4 @@ delay:
    rts
 ;----
 
+_ROM_table: .byte 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
