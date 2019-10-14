@@ -30,7 +30,7 @@ INES_MIRROR = 1 ; 0 = horizontal mirroring, 1 = vertical mirroring
 INES_SRAM   = 0 ; 1 = battery backed SRAM at $6000-7FFF
 
 .byte 'N', 'E', 'S', $1A ; ID
-.byte $02 ; 16k PRG chunk count
+.byte $08 ; 16k PRG chunk count
 .byte $00 ; 8k CHR chunk count
 .byte INES_MIRROR | (INES_SRAM << 1) | ((INES_MAPPER & $f) << 4)
 .byte (INES_MAPPER & %11110000)
@@ -52,9 +52,12 @@ INES_SRAM   = 0 ; 1 = battery backed SRAM at $6000-7FFF
    
    x_param: .res 1
 
-.segment "TAGDATA"
-_mp3_tags:
+_mp3_tags = $8000
+
+.segment "TAGDATA0"
  .incbin "output.bin"
+ 
+.segment "RODATA"
 _mp3_address:
  .incbin "output-address.bin"
 _mp3_bank:
