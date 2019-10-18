@@ -49,6 +49,7 @@ INES_SRAM   = 0 ; 1 = battery backed SRAM at $6000-7FFF
    v5000:
    _cv5000: .res 1
    count_hi: .res 1
+   last_command: .res 1
    
    x_param: .res 1
 
@@ -146,6 +147,7 @@ _mp3_command:
 	lda #$06
 	jsr mp3_send
 	pla
+        sta last_command
 	jsr mp3_send
 	lda #0
 	jsr mp3_send
@@ -154,7 +156,14 @@ _mp3_command:
 	tya
 	jsr mp3_send
 	lda #$EF
-	jsr mp3_send      
+	jsr mp3_send    
+        
+        lda last_command
+        cmp #CMD_SELECT_MP3_FOLDER
+        bne :+
+        ldy #1
+        jsr delay
+:
                 
         
 	
@@ -218,7 +227,7 @@ delay:
 ;   ora #$40
 ;   sta $5000
 
-   ldx #60
+   ldx #10
 :
    lda $2002
    bpl :-
