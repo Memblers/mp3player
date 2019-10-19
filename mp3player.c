@@ -164,6 +164,7 @@ void main(void)
       mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
       ppu_wait_nmi();
       mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      playing = 1;
     }
     if (pad1 & PAD_LEFT)
     {
@@ -174,6 +175,7 @@ void main(void)
         mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
         ppu_wait_nmi();
         mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+        playing = 1;
       }
     }
     if (pad1 & PAD_SELECT)
@@ -183,10 +185,14 @@ void main(void)
     if (pad1 & PAD_DOWN)
       mp3_command(CMD_VOLUME_DOWN,0,0);
     if (pad1 & PAD_A)
+    {      
       mp3_command(CMD_PLAY,1,1);
+      playing = 1;
+    }
     if (pad1 & PAD_B)
     {
       mp3_command(CMD_PAUSE,2,2);
+      playing = 0;
     }
     
     if (playing)
