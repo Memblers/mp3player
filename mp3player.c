@@ -96,12 +96,14 @@ byte playing = 0;
 byte bank_select = 0;
 unsigned int tag_data_index;
 byte temp;
+unsigned int temp16;
 unsigned long frame_counter;
 unsigned long tag_frame_counter;
 byte auto_next = 1;	// start at track zero, auto-inc at beginning
 unsigned long sprite_position = 0;
 unsigned long sprite_velocity = 0;
 unsigned long tag_seconds = 0;
+byte i;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -223,7 +225,8 @@ void main(void)
             }
           }
           if (pad1 & PAD_SELECT)
-            mp3_command(CMD_SHUFFLE_PLAY,0,0);    
+            state = STATE_INIT_LIST_SCREEN;
+            //mp3_command(CMD_SHUFFLE_PLAY,0,0);
           if (pad1 & PAD_UP)
             mp3_command(CMD_VOLUME_UP,0,0);
           if (pad1 & PAD_DOWN)
@@ -258,6 +261,57 @@ void main(void)
           hex_display((frame_counter >> 24),0x10,0xB8);
           */
           oam_hide_rest(spr_id);          
+          break;
+        }
+      
+      case STATE_INIT_LIST_SCREEN:
+        {
+          unsigned int index;
+          ppu_off();
+          
+          oam_clear();
+          
+          temp16 = 0x2042;
+          temp = current_track;
+          
+          for (i = 0; i < 23; i++)
+          {
+            index = mp3_address[temp];  
+            bank_select = mp3_bank[temp];
+            ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+
+            cv5000 &= 0xF0;			// GTROM
+            cv5000 |= bank_select;
+            reg5000 = cv5000;
+
+            memset(ppu_buffer, 0, 32);
+            strcpy((unsigned char *)ppu_buffer, ((unsigned char *) index));
+            vram_adr(temp16);
+            vram_write((unsigned char *)ppu_buffer, 30);
+            temp16 += 0x20;
+            ++temp;
+          }
+
+          ppu_wait_nmi();
+          ppu_on_all();
+
+          state = STATE_RUN_LIST_SCREEN;
+          break;      
+        }
+        
+      case STATE_RUN_LIST_SCREEN:
+        {
+          if (pad1 & PAD_SELECT)
+          {
+            ppu_wait_nmi();
+            ppu_off();
+            vram_adr(0x2000);
+            vram_fill(0x00,0x400);
+            ppu_wait_nmi();
+            ppu_on_all();
+            state = STATE_INIT_PLAY_SCREEN;                    
+          }
+          break;
         }
         
       default:
