@@ -92,7 +92,7 @@ byte time_buffer[16];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 0;
-byte playing = 1;
+byte playing = 0;
 byte bank_select = 0;
 unsigned int tag_data_index;
 byte temp;
@@ -133,12 +133,38 @@ void setup_graphics() {
   vram_write(chr_data, 0x2000);
 }
 
+void __fastcall__ irq_nmi_callback(void)
+{
+  if (__A__ & 0x80)
+    ;	// IRQ
+  else	// NMI
+  {     
+    if (playing)
+    {
+      update_time();
+      sprite_position += sprite_velocity;
+      ++frame_counter;
+      if (frame_counter == tag_frame_counter)
+      {
+        auto_next = 1;
+        frame_counter = 0;
+      }
+      else
+      {
+        auto_next = 0;
+      }
+    }
+  }
+          
+}
+
 void main(void)
 {
   cv5000 = 0xA0;
   reg5000 = 0xA0;
   setup_graphics();
-
+  
+  nmi_set_callback(irq_nmi_callback);
 
   // infinite loop
   while(1)
@@ -213,21 +239,6 @@ void main(void)
             playing = 0;
           }
 
-          if (playing)
-          {
-            update_time();
-            sprite_position += sprite_velocity;
-            ++frame_counter;
-            if (frame_counter == tag_frame_counter)
-            {
-              auto_next = 1;
-              frame_counter = 0;
-            }
-            else
-            {
-              auto_next = 0;
-            }
-          }
 
           spr_id = 0;
 
