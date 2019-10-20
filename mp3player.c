@@ -139,10 +139,6 @@ void main(void)
   reg5000 = 0xA0;
   setup_graphics();
 
-  
-  // start playing
-  select_tag(0);
-  mp3_command(CMD_SELECT_MP3_FOLDER,0,1);  
 
   // infinite loop
   while(1)
