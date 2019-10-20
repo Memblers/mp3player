@@ -62,6 +62,15 @@ typedef enum
   CMD_PLAY_WITH_VOLUME	= 0x22
   } CMD;
 
+typedef enum
+{
+  STATE_INIT_PLAY_SCREEN,
+  STATE_RUN_PLAY_SCREEN,
+  STATE_INIT_LIST_SCREEN,
+  STATE_RUN_LIST_SCREEN
+};
+
+
 void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char param2);
 void select_tag(short tracknumber);
 
@@ -77,19 +86,19 @@ extern byte chr_data[];
 void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
 
-
+byte state = STATE_INIT_PLAY_SCREEN;
 byte ppu_buffer[128];
 byte time_buffer[16];
 byte pad1;
 byte spr_id;
-unsigned int current_track = 1;
+unsigned int current_track = 0;
 byte playing = 1;
 byte bank_select = 0;
 unsigned int tag_data_index;
 byte temp;
 unsigned long frame_counter;
 unsigned long tag_frame_counter;
-byte auto_next = 0;
+byte auto_next = 1;	// start at track zero, auto-inc at beginning
 unsigned long sprite_position = 0;
 unsigned long sprite_velocity = 0;
 unsigned long tag_seconds = 0;
@@ -130,22 +139,6 @@ void main(void)
   reg5000 = 0xA0;
   setup_graphics();
 
-  // draw message  
-  vram_adr(NTADR_A(2,3));
-  vram_write("MI MEDIA PLAYER",15);
-  vram_adr(NTADR_A(2,4));
-  vram_write(__DATE__ " - "__TIME__, 22);
-  vram_adr(NTADR_A(2,6));
-  vram_write("L/R to change tracks",20);
-  vram_adr(NTADR_A(2,7));
-  vram_write("U/D to change volume",20);
-  vram_adr(NTADR_A(2,8));
-  vram_write("Select to enter shuffle mode",28);
-  vram_adr(NTADR_A(4,20));
-  vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02",26);  
-  
-  // enable rendering
-  ppu_on_all();
   
   // start playing
   select_tag(0);
@@ -155,80 +148,117 @@ void main(void)
   while(1)
   {
     ppu_wait_nmi();
-    pad1 = pad_trigger(0);    
+    pad1 = pad_trigger(0);
     
-    if ((pad1 & PAD_RIGHT) || auto_next )
-    {
-      ++current_track;
-      select_tag(current_track-1);
-      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-      ppu_wait_nmi();
-      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-      playing = 1;
-    }
-    if (pad1 & PAD_LEFT)
-    {
-      if (current_track >= 2)
-      {        
-        --current_track;
-        select_tag(current_track-1);
-        mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-        ppu_wait_nmi();
-        mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-        playing = 1;
-      }
-    }
-    if (pad1 & PAD_SELECT)
-      mp3_command(CMD_SHUFFLE_PLAY,0,0);    
-    if (pad1 & PAD_UP)
-      mp3_command(CMD_VOLUME_UP,0,0);
-    if (pad1 & PAD_DOWN)
-      mp3_command(CMD_VOLUME_DOWN,0,0);
-    if (pad1 & PAD_A)
+    switch (state)
     {      
-      mp3_command(CMD_PLAY,1,1);
-      playing = 1;
-    }
-    if (pad1 & PAD_B)
-    {
-      mp3_command(CMD_PAUSE,2,2);
-      playing = 0;
-    }
-    
-    if (playing)
-    {
-      update_time();
-      sprite_position += sprite_velocity;
-      ++frame_counter;
-      if (frame_counter == tag_frame_counter)
-      {
-        auto_next = 1;
-        frame_counter = 0;
-      }
-      else
-      {
-        auto_next = 0;
-      }
-    }
-    
-    spr_id = 0;
+      case STATE_INIT_PLAY_SCREEN:
+        {
+          ppu_wait_nmi();
+          ppu_off();
+          // draw message  
+          vram_adr(NTADR_A(2,3));
+          vram_write("MI MEDIA PLAYER",15);
+          vram_adr(NTADR_A(2,4));
+          vram_write(__DATE__ " - "__TIME__, 22);
+          vram_adr(NTADR_A(2,6));
+          vram_write("L/R to change tracks",20);
+          vram_adr(NTADR_A(2,7));
+          vram_write("U/D to change volume",20);
+          vram_adr(NTADR_A(2,8));
+          vram_write("Select to enter shuffle mode",28);
+          vram_adr(NTADR_A(4,20));
+          vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02",26);  
 
-    spr_id = oam_spr((sprite_position >> 16),0x9F,0x01,2,spr_id);
+          // enable rendering
+          ppu_on_all();
+          
+          state = STATE_RUN_PLAY_SCREEN;          
+          break;
+        }
+
+      case STATE_RUN_PLAY_SCREEN:
+        {
+          if ((pad1 & PAD_RIGHT) || auto_next )
+          {
+            ++current_track;
+            select_tag(current_track-1);
+            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+            ppu_wait_nmi();
+            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+            playing = 1;
+          }
+          if (pad1 & PAD_LEFT)
+          {
+            if (current_track >= 2)
+            {        
+              --current_track;
+              select_tag(current_track-1);
+              mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+              ppu_wait_nmi();
+              mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+              playing = 1;
+            }
+          }
+          if (pad1 & PAD_SELECT)
+            mp3_command(CMD_SHUFFLE_PLAY,0,0);    
+          if (pad1 & PAD_UP)
+            mp3_command(CMD_VOLUME_UP,0,0);
+          if (pad1 & PAD_DOWN)
+            mp3_command(CMD_VOLUME_DOWN,0,0);
+          if (pad1 & PAD_A)
+          {      
+            mp3_command(CMD_PLAY,1,1);
+            playing = 1;
+          }
+          if (pad1 & PAD_B)
+          {
+            mp3_command(CMD_PAUSE,2,2);
+            playing = 0;
+          }
+
+          if (playing)
+          {
+            update_time();
+            sprite_position += sprite_velocity;
+            ++frame_counter;
+            if (frame_counter == tag_frame_counter)
+            {
+              auto_next = 1;
+              frame_counter = 0;
+            }
+            else
+            {
+              auto_next = 0;
+            }
+          }
+
+          spr_id = 0;
+
+          spr_id = oam_spr((sprite_position >> 16),0x9F,0x01,2,spr_id);
+
+          /*
+          hex_display((sprite_velocity >> 8),0x20,0xa0);
+          hex_display((sprite_velocity & 0xFF),0x10,0xa0);
+          hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
+          hex_display((sprite_position),0x40,0xB0);
+          hex_display((sprite_position >> 8),0x30,0xB0);
+          hex_display((sprite_position >> 16),0x20,0xB0);
+          hex_display((sprite_position >> 24),0x10,0xB0);
+          hex_display((frame_counter),0x40,0xB8);
+          hex_display((frame_counter >> 8),0x30,0xB8);
+          hex_display((frame_counter >> 16),0x20,0xB8);
+          hex_display((frame_counter >> 24),0x10,0xB8);
+          */
+          oam_hide_rest(spr_id);          
+        }
+        
+      default:
+        break;
+    }
     
-    /*
-    hex_display((sprite_velocity >> 8),0x20,0xa0);
-    hex_display((sprite_velocity & 0xFF),0x10,0xa0);
-    hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
-    hex_display((sprite_position),0x40,0xB0);
-    hex_display((sprite_position >> 8),0x30,0xB0);
-    hex_display((sprite_position >> 16),0x20,0xB0);
-    hex_display((sprite_position >> 24),0x10,0xB0);
-    hex_display((frame_counter),0x40,0xB8);
-    hex_display((frame_counter >> 8),0x30,0xB8);
-    hex_display((frame_counter >> 16),0x20,0xB8);
-    hex_display((frame_counter >> 24),0x10,0xB8);
-    */
-    oam_hide_rest(spr_id);
+
+    
     
   }
 }
