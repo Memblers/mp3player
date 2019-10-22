@@ -237,6 +237,8 @@ void main(void)
           if (pad1 & PAD_SELECT)
             state = STATE_INIT_LIST_SCREEN;
             //mp3_command(CMD_SHUFFLE_PLAY,0,0);
+          if (pad1 & PAD_START)
+            mp3_command(CMD_ADVERT,0,4);
           if (pad1 & PAD_UP)
             mp3_command(CMD_VOLUME_UP,0,0);
           if (pad1 & PAD_DOWN)
