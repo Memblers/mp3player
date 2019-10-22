@@ -1,9 +1,10 @@
 ;#resource "output.bin"
+;#resource "output-bank.bin"
 ;#resource "gtmp3.cfg"
 ;#define CFGFILE gtmp3.cfg
 
 .export _mp3_command
-.export _cv5000, _reg5000, _ROM_table
+.export _cv5000, _reg5000, _ROM_table, _beep
 .export _mp3_tags, _mp3_address, _mp3_bank
 .import popa, _ppu_wait_nmi
 
@@ -243,5 +244,11 @@ delay:
 ;   sta v5000
    rts
 ;----
+
+_beep:
+	lda #$0F
+        sta $4015
+        beep
+        rts
 
 _ROM_table: .byte 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15

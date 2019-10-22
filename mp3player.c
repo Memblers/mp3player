@@ -1,4 +1,5 @@
 //#resource "output-address.bin"
+//#resource "output-bank.bin"
 //#resource "output.bin"
 //#resource "gtmp3.cfg"
 //#resource "output.bin.0"
@@ -35,6 +36,7 @@
 #define TDB_PAL_BAR_192 	18
 
 #define LIST_PAGE_V	23
+#define MAX_TRACK	102
 
 typedef enum
 {
@@ -73,6 +75,7 @@ typedef enum
 
 
 void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char param2);
+void __fastcall__ beep(void);
 void select_tag(short tracknumber);
 
 
@@ -90,18 +93,18 @@ void hex_display(byte value, byte x_position, byte y_position);
 byte state = STATE_INIT_PLAY_SCREEN;
 byte ppu_buffer[128];
 byte time_buffer[16];
-byte pad1;
-byte spr_id;
+byte pad1 = 0;
+byte spr_id = 0;
 unsigned int current_track = 0;
 unsigned int previous_track = 0;
 unsigned int browse_track = 0;
 byte playing = 0;
 byte bank_select = 0;
-unsigned int tag_data_index;
-byte temp;
-unsigned int temp16;
-unsigned long frame_counter;
-unsigned long tag_frame_counter;
+unsigned int tag_data_index = 0;
+byte temp = 0;
+unsigned int temp16 = 0;
+unsigned long frame_counter = 0;
+unsigned long tag_frame_counter = 0;
 byte auto_next = 1;	// start at track zero, auto-inc at beginning
 unsigned long sprite_position = 0;
 unsigned long sprite_velocity = 0;
@@ -280,6 +283,9 @@ void main(void)
           
           oam_clear();
           
+          vram_adr(0x2000);
+          vram_fill(0x00, 0x400);
+          
           temp16 = 0x2042;
           temp = browse_track-1;
           
@@ -294,10 +300,12 @@ void main(void)
             reg5000 = cv5000;
 
             memset(ppu_buffer, 0, 32);
-            strcpy((unsigned char *)ppu_buffer, ((unsigned char *) index));
+            strncpy((unsigned char *)ppu_buffer, ((unsigned char *) index),29);
             vram_adr(temp16);
             vram_write((unsigned char *)ppu_buffer, 30);
             temp16 += 0x20;
+            if (temp >= MAX_TRACK-1)
+              break;
             ++temp;
           }
           vram_adr(0x0000);
@@ -336,8 +344,16 @@ void main(void)
           }
           if (pad1 & PAD_RIGHT)
           {
-            browse_track += LIST_PAGE_V;
-            state = STATE_INIT_LIST_SCREEN;
+            if (browse_track < (MAX_TRACK - LIST_PAGE_V))
+            {
+              browse_track += LIST_PAGE_V;
+              state = STATE_INIT_LIST_SCREEN;
+            }
+            else
+            {
+              browse_track = (MAX_TRACK - LIST_PAGE_V) + 1;
+              state = STATE_INIT_LIST_SCREEN;
+            }
           }
           break;
         }
@@ -358,7 +374,7 @@ void main(void)
     ppu_buffer[1] = LSB(NTADR_A(2,line)); \
     text_length = strlen((unsigned char *)index) + 1; \
     ppu_buffer[2] = length; \
-    strcpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index)); \
+    strncpy((unsigned char *)ppu_buffer+3, ((unsigned char *) index), 29); \
     ppu_buffer[3 + length] = NT_UPD_EOF; \
     set_vram_update(ppu_buffer); \
     ppu_wait_nmi(); \
