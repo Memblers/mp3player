@@ -92,6 +92,7 @@ byte time_buffer[16];
 byte pad1;
 byte spr_id;
 unsigned int current_track = 0;
+unsigned int previous_track = 0;
 byte playing = 0;
 byte bank_select = 0;
 unsigned int tag_data_index;
@@ -193,9 +194,13 @@ void main(void)
           vram_write("Select to enter shuffle mode",28);
           vram_adr(NTADR_A(4,20));
           vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02",26);  
-
+                    
           // enable rendering
           ppu_on_all();
+          
+          select_tag(current_track - 1);
+          set_vram_update(time_buffer);
+          update_time();
           
           state = STATE_RUN_PLAY_SCREEN;          
           break;
@@ -267,12 +272,14 @@ void main(void)
       case STATE_INIT_LIST_SCREEN:
         {
           unsigned int index;
+          set_vram_update(NULL);
+          ppu_wait_nmi();
           ppu_off();
           
           oam_clear();
           
           temp16 = 0x2042;
-          temp = current_track;
+          temp = current_track-1;
           
           for (i = 0; i < 23; i++)
           {
@@ -291,7 +298,7 @@ void main(void)
             temp16 += 0x20;
             ++temp;
           }
-
+          vram_adr(0x0000);
           ppu_wait_nmi();
           ppu_on_all();
 
@@ -364,30 +371,40 @@ void select_tag(short tracknumber)
   index += 4;
   tag_data_index = index;
   
-  memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
-  frame_counter = 0;  
+    memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
+
+    set_vram_update(NULL);
+    memset(ppu_buffer, 0, 34);
+    ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
+    ppu_buffer[1] = LSB(NTADR_A(7,22));
+    ppu_buffer[2] = 20;
+    sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
+    sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
+    sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
+    ppu_buffer[3 + 20] = NT_UPD_EOF;
+    set_vram_update(ppu_buffer);
+    ppu_wait_nmi();
+    set_vram_update(NULL);
+
+  if (previous_track != tracknumber)
+  {
+    memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
+    frame_counter = 0;  
+
+    memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+    sprite_velocity &= 0x0000FFFF;
+    sprite_position = 0x00200000;
+    
+    memcpy(&time_buffer[0],&ppu_buffer[0],10);
+    time_buffer[2] = 7;
+    time_buffer[10] = NT_UPD_EOF;
+  }
+
+
+    
+    
+    previous_track = tracknumber;
   
-  memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
-  sprite_velocity &= 0x0000FFFF;
-  sprite_position = 0x00200000;
-  
-  memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
-  
-  set_vram_update(NULL);
-  memset(ppu_buffer, 0, 34);
-  ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
-  ppu_buffer[1] = LSB(NTADR_A(7,22));
-  ppu_buffer[2] = 20;
-  sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
-  sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
-  sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
-  ppu_buffer[3 + 20] = NT_UPD_EOF;
-  set_vram_update(ppu_buffer);
-  ppu_wait_nmi();
-  
-  memcpy(&time_buffer[0],&ppu_buffer[0],10);
-  time_buffer[2] = 7;
-  time_buffer[10] = NT_UPD_EOF;         
          
 }
 
@@ -419,8 +436,8 @@ void update_time()
       }
     }
   }
-  
-  set_vram_update(time_buffer);  
+  if (state == STATE_RUN_PLAY_SCREEN)
+    set_vram_update(time_buffer);  
 }
   
 void hex_display(byte value, byte x_position, byte y_position)
