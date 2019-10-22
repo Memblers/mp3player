@@ -1,4 +1,3 @@
-//#resource "output-bank.bin"
 //#resource "output-address.bin"
 //#resource "output.bin"
 //#resource "gtmp3.cfg"
@@ -34,6 +33,8 @@
 #define TDB_PAL_FRAMES 		12
 #define TDB_PAL_BAR_128 	16
 #define TDB_PAL_BAR_192 	18
+
+#define LIST_PAGE_V	23
 
 typedef enum
 {
@@ -93,6 +94,7 @@ byte pad1;
 byte spr_id;
 unsigned int current_track = 0;
 unsigned int previous_track = 0;
+unsigned int browse_track = 0;
 byte playing = 0;
 byte bank_select = 0;
 unsigned int tag_data_index;
@@ -210,7 +212,7 @@ void main(void)
         {
           if ((pad1 & PAD_RIGHT) || auto_next )
           {
-            ++current_track;
+            browse_track = ++current_track;
             select_tag(current_track-1);
             mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
             ppu_wait_nmi();
@@ -221,7 +223,7 @@ void main(void)
           {
             if (current_track >= 2)
             {        
-              --current_track;
+              browse_track = --current_track;
               select_tag(current_track-1);
               mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
               ppu_wait_nmi();
@@ -279,7 +281,7 @@ void main(void)
           oam_clear();
           
           temp16 = 0x2042;
-          temp = current_track-1;
+          temp = browse_track-1;
           
           for (i = 0; i < 23; i++)
           {
@@ -318,16 +320,31 @@ void main(void)
             ppu_on_all();
             state = STATE_INIT_PLAY_SCREEN;                    
           }
+          if (pad1 & PAD_LEFT)
+          {
+            if (browse_track < LIST_PAGE_V)
+            {
+              browse_track = 1;
+              state = STATE_INIT_LIST_SCREEN;
+            }
+            else
+            {
+              browse_track -= LIST_PAGE_V;
+              state = STATE_INIT_LIST_SCREEN;
+            }
+            
+          }
+          if (pad1 & PAD_RIGHT)
+          {
+            browse_track += LIST_PAGE_V;
+            state = STATE_INIT_LIST_SCREEN;
+          }
           break;
         }
         
       default:
         break;
-    }
-    
-
-    
-    
+    }    
   }
 }
 
@@ -348,7 +365,7 @@ void main(void)
   };
 
 void select_tag(short tracknumber)
-{    
+{  
   byte text_length;
   unsigned int index;  
   
@@ -371,20 +388,20 @@ void select_tag(short tracknumber)
   index += 4;
   tag_data_index = index;
   
-    memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
+  memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
 
-    set_vram_update(NULL);
-    memset(ppu_buffer, 0, 34);
-    ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
-    ppu_buffer[1] = LSB(NTADR_A(7,22));
-    ppu_buffer[2] = 20;
-    sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
-    sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
-    sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
-    ppu_buffer[3 + 20] = NT_UPD_EOF;
-    set_vram_update(ppu_buffer);
-    ppu_wait_nmi();
-    set_vram_update(NULL);
+  set_vram_update(NULL);
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(7,22));
+  ppu_buffer[2] = 20;
+  sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
+  sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
+  sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
+  ppu_buffer[3 + 20] = NT_UPD_EOF;
+  set_vram_update(ppu_buffer);
+  ppu_wait_nmi();
+  set_vram_update(NULL);
 
   if (previous_track != tracknumber)
   {
@@ -398,14 +415,8 @@ void select_tag(short tracknumber)
     memcpy(&time_buffer[0],&ppu_buffer[0],10);
     time_buffer[2] = 7;
     time_buffer[10] = NT_UPD_EOF;
-  }
-
-
-    
-    
-    previous_track = tracknumber;
-  
-         
+  }    
+  previous_track = tracknumber;         
 }
 
 void update_time()
