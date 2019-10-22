@@ -166,6 +166,12 @@ void __fastcall__ irq_nmi_callback(void)
           
 }
 
+void __fastcall__ blank_callback(void)
+{
+  return;          
+}
+
+
 void main(void)
 {
   cv5000 = 0xA0;
@@ -281,9 +287,9 @@ void main(void)
           unsigned int index;
           set_vram_update(NULL);
           ppu_wait_nmi();
-          ppu_off();
-          
+          ppu_off();          
           oam_clear();
+          nmi_set_callback(blank_callback);
           
           vram_adr(0x2000);
           vram_fill(0x00, 0x400);
@@ -304,12 +310,15 @@ void main(void)
             memset(ppu_buffer, 0, 32);
             strncpy((unsigned char *)ppu_buffer, ((unsigned char *) index),29);
             vram_adr(temp16);
-            vram_write((unsigned char *)ppu_buffer, 30);
+            vram_write((unsigned char *)ppu_buffer, 29);
             temp16 += 0x20;
             if (temp >= MAX_TRACK-1)
               break;
             ++temp;
           }
+          
+          nmi_set_callback(irq_nmi_callback);
+          
           vram_adr(0x0000);
           ppu_wait_nmi();
           ppu_on_all();
@@ -326,7 +335,7 @@ void main(void)
             ppu_off();
             vram_adr(0x2000);
             vram_fill(0x00,0x400);
-            ppu_wait_nmi();
+
             ppu_on_all();
             state = STATE_INIT_PLAY_SCREEN;                    
           }
