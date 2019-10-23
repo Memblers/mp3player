@@ -158,6 +158,7 @@ _mp3_command:
 	jsr mp3_send
 	lda #$EF
 	jsr mp3_send    
+        rts
         
         lda last_command
         cmp #CMD_SELECT_MP3_FOLDER

@@ -37,6 +37,7 @@
 
 #define LIST_PAGE_V	23
 #define MAX_TRACK	102
+#define COOLDOWN_LENGTH 20
 
 typedef enum
 {
@@ -95,6 +96,8 @@ byte ppu_buffer[128];
 byte time_buffer[16];
 byte pad1 = 0;
 byte spr_id = 0;
+word cooldown_timer = 0;
+byte auto_trigger = 0;
 unsigned int current_track = 0;
 unsigned int previous_track = 0;
 unsigned int browse_track = 0;
@@ -162,6 +165,8 @@ void __fastcall__ irq_nmi_callback(void)
         auto_next = 0;
       }
     }
+    if (cooldown_timer)
+      --cooldown_timer;
   }
           
 }
@@ -217,27 +222,41 @@ void main(void)
           break;
         }
 
+        #define play_command(void)	\
+        {	\
+              select_tag(current_track-1);	\
+              if (cooldown_timer == 0)	\
+              {	\
+                mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));	\
+              	ppu_wait_nmi();\
+              	mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));	\
+              	playing = 1;	\
+                cooldown_timer = COOLDOWN_LENGTH;	\
+              }	\
+              else	\
+              {	\
+                auto_trigger = 1;	\
+              }	\
+	    };
+        
+
       case STATE_RUN_PLAY_SCREEN:
         {
           if ((pad1 & PAD_RIGHT) || auto_next )
           {
-            browse_track = ++current_track;
-            select_tag(current_track-1);
-            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-            ppu_wait_nmi();
-            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-            playing = 1;
+            if (current_track != MAX_TRACK)
+            {
+              browse_track = ++current_track;            
+              play_command();
+            }
           }
           if (pad1 & PAD_LEFT)
           {
             if (current_track >= 2)
             {        
               browse_track = --current_track;
-              select_tag(current_track-1);
-              mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-              ppu_wait_nmi();
-              mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-              playing = 1;
+              play_command();             
+              
             }
           }
           if (pad1 & PAD_SELECT)
@@ -259,6 +278,18 @@ void main(void)
             mp3_command(CMD_PAUSE,2,2);
             playing = 0;
           }
+          
+          if (auto_trigger)
+          {
+            browse_track = current_track;
+            select_tag(current_track-1);
+            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+            ppu_wait_nmi();
+            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+            playing = 1;
+            auto_trigger = 0;
+          }
+            
 
 
           spr_id = 0;
