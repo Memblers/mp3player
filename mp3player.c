@@ -36,8 +36,12 @@
 #define TDB_PAL_BAR_192 	18
 
 #define LIST_PAGE_V	23
+#define LIST_TOP	15
+#define LIST_BOTTOM	((LIST_PAGE_V) * 8)
 #define MAX_TRACK	102
+#define MAX_PAGE	MAX_TRACK / LIST_PAGE_V
 #define COOLDOWN_LENGTH 20
+
 
 typedef enum
 {
@@ -113,6 +117,8 @@ unsigned long sprite_position = 0;
 unsigned long sprite_velocity = 0;
 unsigned long tag_seconds = 0;
 byte i;
+byte selector_y_position = LIST_TOP;
+byte list_page = 0;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -248,6 +254,8 @@ void main(void)
             {
               browse_track = ++current_track;            
               play_command();
+              if (((browse_track) % LIST_PAGE_V) == 1)
+                ++list_page;
             }
           }
           if (pad1 & PAD_LEFT)
@@ -322,12 +330,15 @@ void main(void)
           oam_clear();
           nmi_set_callback(blank_callback);
           
+          selector_y_position = (((browse_track - 1) % LIST_PAGE_V) * 8) + LIST_TOP;
+          list_page = ((browse_track - 1) / LIST_PAGE_V);
+          
           vram_adr(0x2000);
           vram_fill(0x00, 0x400);
           
           temp16 = 0x2042;
-          temp = browse_track-1;
-          
+          temp = list_page * LIST_PAGE_V;
+                             
           for (i = 0; i < 23; i++)
           {
             index = mp3_address[temp];  
@@ -362,46 +373,94 @@ void main(void)
         {
           if (pad1 & PAD_SELECT)
           {
+            oam_clear();
             ppu_wait_nmi();
             ppu_off();
+
             vram_adr(0x2000);
             vram_fill(0x00,0x400);
 
             ppu_on_all();
             state = STATE_INIT_PLAY_SCREEN;                    
           }
+          
           if (pad1 & PAD_LEFT)
           {
-            if (browse_track < LIST_PAGE_V)
+            if (list_page == 0) //(browse_track < LIST_PAGE_V)
             {
               browse_track = 1;
-              state = STATE_INIT_LIST_SCREEN;
+              list_page = 0;
+              selector_y_position = LIST_TOP;
             }
             else
             {
               browse_track -= LIST_PAGE_V;
+              --list_page;
               state = STATE_INIT_LIST_SCREEN;
-            }
-            
+            }            
           }
+          
           if (pad1 & PAD_RIGHT)
           {
-            if (browse_track < (MAX_TRACK - LIST_PAGE_V))
+            if (list_page < MAX_PAGE)
             {
               browse_track += LIST_PAGE_V;
+              if (browse_track > MAX_TRACK)
+              {                
+                selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7;
+                browse_track = MAX_TRACK;
+              }
+              ++list_page;
               state = STATE_INIT_LIST_SCREEN;
             }
-            else
+            else	// on last page, move to last track
             {
-              browse_track = (MAX_TRACK - LIST_PAGE_V) + 1;
-              state = STATE_INIT_LIST_SCREEN;
+              selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7; //LIST_TOP;
+              browse_track = MAX_TRACK;
             }
           }
+          if (pad1 & PAD_DOWN)
+          {
+            if (browse_track >= MAX_TRACK)
+            	;
+              
+            else if (selector_y_position < LIST_BOTTOM)
+            {
+              selector_y_position += 8;
+              ++browse_track;
+            }
+          }
+	  if (pad1 & PAD_UP)
+          {
+            if (selector_y_position > LIST_TOP)
+            {
+              selector_y_position -= 8;
+              --browse_track;
+            }
+          }
+
+          spr_id = 0;
+                    
+          spr_id = oam_spr((sprite_position >> 16),selector_y_position,0x01,2,spr_id);
+          
+          hex_display((current_track >> 8),0x10,0xD0);
+          hex_display((current_track & 0xFF),0x20,0xD0);
+          hex_display((browse_track >> 8),0x10,0xD8);
+          hex_display((browse_track & 0xFF),0x20,0xD8);
+          /*
+
+          hex_display((sprite_position >> 24),0x10,0xB0);
+          hex_display((frame_counter),0x40,0xB8);
+          hex_display((frame_counter >> 8),0x30,0xB8);
+          hex_display((frame_counter >> 16),0x20,0xB8);
+          hex_display((frame_counter >> 24),0x10,0xB8);
+          */
+          oam_hide_rest(spr_id);          
+
           break;
-        }
-        
+        }        
       default:
-        break;
+        break;        
     }    
   }
 }
@@ -409,7 +468,6 @@ void main(void)
 
 #define print_tag(line, length) \
   {    \
-  \
     set_vram_update(NULL); \
     memset(ppu_buffer, 0, 34); \
     ppu_buffer[0] = MSB(NTADR_A(2,line))|NT_UPD_HORZ; \
