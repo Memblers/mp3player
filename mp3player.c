@@ -11,6 +11,7 @@
 //#resource "output.bin.6"
 //#resource "output.bin.7"
 //#define CFGFILE gtmp3.cfg
+//#link "oamfx.s"
 
 //#include <stdlib.h>
 #include <string.h>
@@ -81,6 +82,8 @@ typedef enum
 
 void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char param2);
 void __fastcall__ beep(void);
+void __fastcall__ oam_bar_init(void);
+void __fastcall__ oam_bar_run(void);
 void select_tag(short tracknumber);
 
 
@@ -207,7 +210,7 @@ void main(void)
           vram_adr(NTADR_A(2,3));
           vram_write("MI MEDIA PLAYER",15);
           vram_adr(NTADR_A(2,4));
-          vram_write(__DATE__ " - "__TIME__, 22);
+          vram_write(__DATE__ " - "__TIME__"  V0.7", 28);
           vram_adr(NTADR_A(2,6));
           vram_write("L/R to change tracks",20);
           vram_adr(NTADR_A(2,7));
@@ -361,6 +364,8 @@ void main(void)
           
           nmi_set_callback(irq_nmi_callback);
           
+          oam_bar_init();
+          
           vram_adr(0x0000);
           ppu_wait_nmi();
           ppu_on_all();
@@ -440,14 +445,23 @@ void main(void)
           }
 
           spr_id = 0;
-                    
-          spr_id = oam_spr((sprite_position >> 16),selector_y_position,0x01,2,spr_id);
+          oam_bar_run();
           
+          /*
+          
+          for (i = 0; i <= 64; ++i)
+          {
+            spr_id = oam_spr((sprite_position >> 16)+(i * 8),selector_y_position,0x01,2,spr_id);
+          }
+          
+          */
+          
+          /*
+
           hex_display((current_track >> 8),0x10,0xD0);
           hex_display((current_track & 0xFF),0x20,0xD0);
           hex_display((browse_track >> 8),0x10,0xD8);
           hex_display((browse_track & 0xFF),0x20,0xD8);
-          /*
 
           hex_display((sprite_position >> 24),0x10,0xB0);
           hex_display((frame_counter),0x40,0xB8);
