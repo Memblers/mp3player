@@ -216,7 +216,7 @@ void main(void)
           vram_adr(NTADR_A(2,7));
           vram_write("U/D to change volume",20);
           vram_adr(NTADR_A(2,8));
-          vram_write("Select to enter shuffle mode",28);
+          vram_write("Select for track browser    ",25);
           vram_adr(NTADR_A(4,20));
           vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02",26);  
                     
@@ -298,6 +298,7 @@ void main(void)
             ppu_wait_nmi();
             mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
             playing = 1;
+            cooldown_timer = COOLDOWN_LENGTH;
             auto_trigger = 0;
           }
             
@@ -442,6 +443,21 @@ void main(void)
               selector_y_position -= 8;
               --browse_track;
             }
+          }
+          if (pad1 & PAD_A)
+          {
+            current_track = browse_track;
+            play_command();
+            
+            oam_clear();
+            ppu_wait_nmi();
+            ppu_off();
+
+            vram_adr(0x2000);
+            vram_fill(0x00,0x400);
+
+            ppu_on_all();
+            state = STATE_INIT_PLAY_SCREEN;                    
           }
 
           spr_id = 0;
