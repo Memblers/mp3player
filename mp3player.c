@@ -377,7 +377,7 @@ void main(void)
         
       case STATE_RUN_LIST_SCREEN:
         {
-          if (pad1 & PAD_SELECT)
+          if ((pad1 & PAD_SELECT) || (pad1 & PAD_B))
           {
             oam_clear();
             ppu_wait_nmi();
@@ -444,7 +444,7 @@ void main(void)
               --browse_track;
             }
           }
-          if (pad1 & PAD_A)
+          if ((pad1 & PAD_A) || (pad1 & PAD_START))
           {
             current_track = browse_track;
             play_command();
