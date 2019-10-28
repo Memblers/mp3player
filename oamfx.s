@@ -1,11 +1,13 @@
 .export _oam_bar_init,_oam_bar_run
-.import _selector_y_position, _temp, _spr_id
+.export _vis_stars_init, _vis_stars_run
+.import _selector_y_position, _temp, _spr_id, _rand8
 
 .segment "ZEROPAGE"
 testval: .res 1
 
 .segment "DATA"
 oam_x_pos_lo:	.res $100
+star_speeds:	.res $100
 
 .segment "RODATA"
 sine:
@@ -19,16 +21,61 @@ sine:
 .byte 39,42,44,46,49,51,54,56,59,62,64,67,70,73,76,79,81,84,87,90,93,96,99,103,106,109,112,115,118,121,124,128
 
 .segment "CODE"
+
+_vis_stars_init:
+	ldy #0
+        :
+        lda #$0D
+        sta $201,y        
+	jsr _rand8
+        sta $200,y
+        jsr _rand8
+        sta $203,y
+        iny
+        iny
+        iny
+        iny
+        bne :-
+
+        :
+        jsr _rand8
+        cmp #0
+        beq :-
+        lsr
+        sta star_speeds,y
+        iny
+        bne :-
+        rts
+        
+_vis_stars_run:
+	ldx #0
+        ldy #0
+        :
+        lda oam_x_pos_lo,x
+        clc
+        adc star_speeds,x
+        sta oam_x_pos_lo,x
+        lda #0
+        adc $203,y
+        sta $203,y
+        inx
+        iny
+        iny
+        iny
+        iny
+        bne :-
+        sty _spr_id
+        rts
+        
+        
+        
+        
+
+
 _oam_bar_init:
 
-	lda _selector_y_position
-        sec
-        sbc #4
-        tay
         ldx #0        
         :
-        tya
-        sta $200,x
 	lda #$0F
         sta $201,x
         lda #$20
@@ -39,13 +86,7 @@ _oam_bar_init:
         inx
         cpx #(4 * 8)
         bne :-
-        tya
-        clc
-        adc #8
-        tay
         :
-        tya
-        sta $200,x
 	lda #$0E
         sta $201,x
         lda #$20

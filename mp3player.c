@@ -76,7 +76,9 @@ typedef enum
   STATE_INIT_PLAY_SCREEN,
   STATE_RUN_PLAY_SCREEN,
   STATE_INIT_LIST_SCREEN,
-  STATE_RUN_LIST_SCREEN
+  STATE_RUN_LIST_SCREEN,
+  STATE_INIT_VIS_SCREEN,
+  STATE_RUN_VIS_SCREEN
 };
 
 
@@ -84,6 +86,8 @@ void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char p
 void __fastcall__ beep(void);
 void __fastcall__ oam_bar_init(void);
 void __fastcall__ oam_bar_run(void);
+void __fastcall__ vis_stars_init(void);
+void __fastcall__ vis_stars_run(void);
 void select_tag(short tracknumber);
 
 
@@ -365,7 +369,7 @@ void main(void)
           
           nmi_set_callback(irq_nmi_callback);
           
-          oam_bar_init();
+          oam_bar_init();          
           
           vram_adr(0x0000);
           ppu_wait_nmi();
@@ -387,7 +391,7 @@ void main(void)
             vram_fill(0x00,0x400);
 
             ppu_on_all();
-            state = STATE_INIT_PLAY_SCREEN;                    
+            state = STATE_INIT_VIS_SCREEN;
           }
           
           if (pad1 & PAD_LEFT)
@@ -463,6 +467,7 @@ void main(void)
           spr_id = 0;
           oam_bar_run();
           
+          
           /*
           
           for (i = 0; i <= 64; ++i)
@@ -485,10 +490,36 @@ void main(void)
           hex_display((frame_counter >> 16),0x20,0xB8);
           hex_display((frame_counter >> 24),0x10,0xB8);
           */
-          oam_hide_rest(spr_id);          
+          //oam_hide_rest(spr_id);          
 
           break;
-        }        
+        }
+        
+      case STATE_INIT_VIS_SCREEN:
+        {
+          set_rand(frame_counter);
+          vis_stars_init();
+          state = STATE_RUN_VIS_SCREEN;
+          break;
+        }
+      case STATE_RUN_VIS_SCREEN:
+        {
+          if ((pad1 & PAD_SELECT) || (pad1 & PAD_B))
+          {
+            oam_clear();
+            ppu_wait_nmi();
+            ppu_off();
+
+            vram_adr(0x2000);
+            vram_fill(0x00,0x400);
+
+            ppu_on_all();
+            state = STATE_INIT_PLAY_SCREEN;
+          }
+
+          vis_stars_run();
+          break;
+        }
       default:
         break;        
     }    
