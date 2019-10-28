@@ -42,7 +42,7 @@
 #define MAX_TRACK	102
 #define MAX_PAGE	MAX_TRACK / LIST_PAGE_V
 #define COOLDOWN_LENGTH 30
-
+#define SCROLLER_SPEED	0x000060
 
 typedef enum
 {
@@ -221,11 +221,11 @@ void main(void)
           vram_adr(NTADR_A(2,4));
           vram_write(__DATE__ " - "__TIME__"  V0.7", 28);
           vram_adr(NTADR_A(2,6));
-          vram_write("L/R to change tracks",20);
+          vram_write("\x1E/\x1F to change tracks",20);
           vram_adr(NTADR_A(2,7));
-          vram_write("U/D to change volume",20);
+          vram_write("\x1C/\x1D to change volume",20);
           vram_adr(NTADR_A(2,8));
-          vram_write("Select for track browser    ",25);
+          vram_write("Select to change screen mode",28);
           vram_adr(NTADR_A(4,20));
           vram_write("\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02\x02",26);  
                     
@@ -504,6 +504,7 @@ void main(void)
           set_rand(frame_counter);
           vis_stars_init();
           
+          h_scroll_ext = 0;
           
           
           ppu_wait_nmi();
@@ -549,7 +550,7 @@ void main(void)
             break;
           }
           
-          h_scroll_ext += 0x000066;
+          h_scroll_ext += SCROLLER_SPEED; 
           scroll((h_scroll_ext >> 8),0);
 
           vis_stars_run();
