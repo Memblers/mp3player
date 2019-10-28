@@ -98,12 +98,14 @@ extern byte mp3_tags[];
 extern unsigned int mp3_address[];
 extern byte mp3_bank[];
 extern byte chr_data[];
+extern byte sine[];
 
 void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
 
 byte state = STATE_INIT_PLAY_SCREEN;
 byte ppu_buffer[128];
+byte str_buffer[128];
 byte time_buffer[16];
 byte pad1 = 0;
 byte spr_id = 0;
@@ -126,6 +128,9 @@ unsigned long tag_seconds = 0;
 byte i;
 byte selector_y_position = LIST_TOP;
 byte list_page = 0;
+unsigned int index;
+word h_scroll = 0;
+unsigned long h_scroll_ext = 0;
 
 const char hex_table[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                            '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -330,8 +335,7 @@ void main(void)
         }
       
       case STATE_INIT_LIST_SCREEN:
-        {
-          unsigned int index;
+        {          
           set_vram_update(NULL);
           ppu_wait_nmi();
           ppu_off();          
@@ -499,6 +503,30 @@ void main(void)
         {
           set_rand(frame_counter);
           vis_stars_init();
+          
+          
+          
+          ppu_wait_nmi();
+          ppu_off();                   
+          
+          index = mp3_address[current_track-1];  
+          bank_select = mp3_bank[current_track-1];
+          ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+
+          cv5000 &= 0xF0;			// GTROM
+          cv5000 |= bank_select;
+          reg5000 = cv5000;
+          
+          memset(str_buffer, 0, 128);
+          strncpy((unsigned char *)str_buffer, ((unsigned char *) index),64);
+
+          vram_adr(0x2600);
+          vram_write(&str_buffer[0], 32);
+          vram_adr(0x2200);
+          vram_write(&str_buffer[0x20], 32);
+          
+          ppu_wait_nmi();
+          ppu_on_all();   
           state = STATE_RUN_VIS_SCREEN;
           break;
         }
@@ -506,16 +534,23 @@ void main(void)
         {
           if ((pad1 & PAD_SELECT) || (pad1 & PAD_B))
           {
+
             oam_clear();
             ppu_wait_nmi();
             ppu_off();
 
             vram_adr(0x2000);
-            vram_fill(0x00,0x400);
+            vram_fill(0x00,0x0800);
+            scroll(0,0);            
 
             ppu_on_all();
+            
             state = STATE_INIT_PLAY_SCREEN;
+            break;
           }
+          
+          h_scroll_ext += 0x000066;
+          scroll((h_scroll_ext >> 8),0);
 
           vis_stars_run();
           break;
