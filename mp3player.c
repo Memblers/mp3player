@@ -254,7 +254,7 @@ void main(void)
 
       case STATE_RUN_PLAY_SCREEN:
         {
-          if ((pad1 & PAD_RIGHT) || auto_next )
+          if (pad1 & PAD_RIGHT)
           {
             if (current_track != MAX_TRACK)
             {
@@ -291,39 +291,10 @@ void main(void)
           {
             mp3_command(CMD_PAUSE,2,2);
             playing = 0;
-          }
-          
-          if (auto_trigger)
-          {
-            browse_track = current_track;
-            select_tag(current_track-1);
-            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-            ppu_wait_nmi();
-            mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
-            playing = 1;
-            cooldown_timer = COOLDOWN_LENGTH;
-            auto_trigger = 0;
-          }
-            
-
+          }          
 
           spr_id = 0;
-
-          spr_id = oam_spr((sprite_position >> 16),0x9F,0x01,2,spr_id);
-
-          /*
-          hex_display((sprite_velocity >> 8),0x20,0xa0);
-          hex_display((sprite_velocity & 0xFF),0x10,0xa0);
-          hex_display(mp3_tags[tag_data_index-0x8000],0x38,0xa0);
-          hex_display((sprite_position),0x40,0xB0);
-          hex_display((sprite_position >> 8),0x30,0xB0);
-          hex_display((sprite_position >> 16),0x20,0xB0);
-          hex_display((sprite_position >> 24),0x10,0xB0);
-          hex_display((frame_counter),0x40,0xB8);
-          hex_display((frame_counter >> 8),0x30,0xB8);
-          hex_display((frame_counter >> 16),0x20,0xB8);
-          hex_display((frame_counter >> 24),0x10,0xB8);
-          */
+          spr_id = oam_spr((sprite_position >> 16),0x9F,0x01,2,spr_id);	// progress bar indicator
           oam_hide_rest(spr_id);          
           break;
         }
@@ -538,7 +509,29 @@ void main(void)
         }
       default:
         break;        
-    }    
+    }	// end of - switch (state)
+    
+    if (auto_next)
+    {
+      if (current_track != MAX_TRACK)
+      {
+        browse_track = ++current_track;            
+        play_command();
+        if (((browse_track) % LIST_PAGE_V) == 1)
+          ++list_page;
+      }
+    }
+    if (auto_trigger)
+    {
+      browse_track = current_track;
+      select_tag(current_track-1);
+      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      ppu_wait_nmi();
+      mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));
+      playing = 1;
+      cooldown_timer = COOLDOWN_LENGTH;
+      auto_trigger = 0;
+    }
   }
 }
 
