@@ -12,20 +12,17 @@
 //#resource "output.bin.7"
 //#define CFGFILE gtmp3.cfg
 //#link "oamfx.s"
+//#link "mp3.s"
+//#link "chr_generic.s"
 
-//#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 
 // include NESLIB header
 #include "neslib.h"
 
 // include CC65 NES Header (PPU)
 #include <nes.h>
-
-// link the pattern table into CHR ROM
-//#link "chr_generic.s"
 
 // offsets inside the binary data section of tag structure
 #define TDB_SECONDS		0
@@ -81,7 +78,6 @@ typedef enum
   STATE_RUN_VIS_SCREEN
 };
 
-
 void __fastcall__ mp3_command(CMD command, unsigned char param1, unsigned char param2);
 void __fastcall__ beep(void);
 void __fastcall__ oam_bar_init(void);
@@ -90,9 +86,7 @@ void __fastcall__ vis_stars_init(void);
 void __fastcall__ vis_stars_run(void);
 void select_tag(short tracknumber);
 
-
-
-extern byte cv5000, reg5000, ROM_table[];
+extern byte cv5000, reg5000, UNROM_table[];
 #pragma zpsym ("cv5000")
 extern byte mp3_tags[];
 extern unsigned int mp3_address[];
@@ -355,7 +349,7 @@ void main(void)
           {
             index = mp3_address[temp];  
             bank_select = mp3_bank[temp];
-            ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+            UNROM_table[bank_select] = bank_select;  // UNROM bus conflict
 
             cv5000 &= 0xF0;			// GTROM
             cv5000 |= bank_select;
@@ -400,7 +394,7 @@ void main(void)
           
           if (pad1 & PAD_LEFT)
           {
-            if (list_page == 0) //(browse_track < LIST_PAGE_V)
+            if (list_page == 0)
             {
               browse_track = 1;
               list_page = 0;
@@ -429,7 +423,7 @@ void main(void)
             }
             else	// on last page, move to last track
             {
-              selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7; //LIST_TOP;
+              selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7;
               browse_track = MAX_TRACK;
             }
           }
@@ -469,17 +463,7 @@ void main(void)
           }
 
           spr_id = 0;
-          oam_bar_run();
-          
-          
-          /*
-          
-          for (i = 0; i <= 64; ++i)
-          {
-            spr_id = oam_spr((sprite_position >> 16)+(i * 8),selector_y_position,0x01,2,spr_id);
-          }
-          
-          */
+          oam_bar_run();       
           
           /*
 
@@ -488,13 +472,9 @@ void main(void)
           hex_display((browse_track >> 8),0x10,0xD8);
           hex_display((browse_track & 0xFF),0x20,0xD8);
 
-          hex_display((sprite_position >> 24),0x10,0xB0);
-          hex_display((frame_counter),0x40,0xB8);
-          hex_display((frame_counter >> 8),0x30,0xB8);
-          hex_display((frame_counter >> 16),0x20,0xB8);
-          hex_display((frame_counter >> 24),0x10,0xB8);
           */
-          //oam_hide_rest(spr_id);          
+          
+          oam_hide_rest(spr_id);          
 
           break;
         }
@@ -512,7 +492,7 @@ void main(void)
           
           index = mp3_address[current_track-1];  
           bank_select = mp3_bank[current_track-1];
-          ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+          UNROM_table[bank_select] = bank_select;  // UNROM bus conflict
 
           cv5000 &= 0xF0;			// GTROM
           cv5000 |= bank_select;
@@ -585,7 +565,7 @@ void select_tag(short tracknumber)
   index = mp3_address[tracknumber];
   
   bank_select = mp3_bank[tracknumber];
-  ROM_table[bank_select] = bank_select;  // UNROM bus conflict
+  UNROM_table[bank_select] = bank_select;  // UNROM bus conflict
   
   cv5000 &= 0xF0;			// GTROM
   cv5000 |= bank_select;
@@ -672,4 +652,3 @@ void hex_display(byte value, byte x_position, byte y_position)
     spr_id = oam_spr((x_position + 8),y_position,hex_table[temp],2,spr_id);
 }
 
-//#link "mp3.s"

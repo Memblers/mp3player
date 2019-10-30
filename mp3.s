@@ -4,7 +4,7 @@
 ;#define CFGFILE gtmp3.cfg
 
 .export _mp3_command
-.export _cv5000, _reg5000, _ROM_table, _beep
+.export _cv5000, _reg5000, _UNROM_table, _beep
 .export _mp3_tags, _mp3_address, _mp3_bank
 .import popa, _ppu_wait_nmi
 
@@ -132,14 +132,14 @@ mp3_send:
 
 ;----
    
-_mp3_command:
+_mp3_command:		; C function entry
 	sta temp_y	; parameter 2
         jsr popa
         tax
         jsr popa
         ldy temp_y
         
-;mp3_command:
+;mp3_command:		; assembly entry
 	pha
 	lda #$7E
 	jsr mp3_send
@@ -158,20 +158,7 @@ _mp3_command:
 	jsr mp3_send
 	lda #$EF
 	jsr mp3_send    
-        rts
-        
-        lda last_command
-        cmp #CMD_SELECT_MP3_FOLDER
-        bne :+
-        ldy #1
-        jsr delay
-:
-                
-        
-	
-;	ldy #1
-;	jsr delay
-	rts
+        rts     
 	
 .enum
 	CMD_NEXT_SONG		= $01
@@ -223,27 +210,6 @@ _mp3_command:
 ;cmd_play_with_volume:		.byte $7E, $FF, $06, $22, $00, $1E, $01, $EF	; parameters: Y = volume, X = track number
 
 
-;---- Y second delay
-delay:
-;   lda v5000
-;   ora #$40
-;   sta $5000
-
-   ldx #10
-:
-   lda $2002
-   bpl :-
-   dex
-   bne :-
-   ldx #60
-   dey
-   bne :-
-
-;   lda v5000
-;   and #%10111111
-;   sta $5000
-;   sta v5000
-   rts
 ;----
 
 _beep:
@@ -252,4 +218,4 @@ _beep:
         beep
         rts
 
-_ROM_table: .byte 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+_UNROM_table: .byte 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
