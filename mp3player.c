@@ -39,7 +39,7 @@
 #define MAX_TRACK	102
 #define MAX_PAGE	MAX_TRACK / LIST_PAGE_V
 #define COOLDOWN_LENGTH 30
-#define SCROLLER_SPEED	0x000060
+#define SCROLLER_SPEED	0x000049
 
 typedef enum
 {
@@ -85,6 +85,7 @@ void __fastcall__ oam_bar_run(void);
 void __fastcall__ vis_stars_init(void);
 void __fastcall__ vis_stars_run(void);
 void select_tag(short tracknumber);
+void select_tag_time(short tracknumber);
 
 extern byte cv5000, reg5000, UNROM_table[];
 #pragma zpsym ("cv5000")
@@ -167,7 +168,7 @@ void __fastcall__ irq_nmi_callback(void)
       update_time();
       sprite_position += sprite_velocity;
       ++frame_counter;
-      if (frame_counter == tag_frame_counter)
+      if (frame_counter >= tag_frame_counter)
       {
         auto_next = 1;
         frame_counter = 0;
@@ -520,8 +521,33 @@ void main(void)
       if (current_track != MAX_TRACK)
       {
         browse_track = ++current_track;
-        if (state == STATE_RUN_PLAY_SCREEN)
-          select_tag(current_track-1);
+        switch (state)
+        {
+          case STATE_RUN_PLAY_SCREEN:
+            {
+              select_tag(current_track-1);
+              break;
+            }
+	  case STATE_INIT_VIS_SCREEN:
+          case STATE_RUN_VIS_SCREEN:
+            {
+              select_tag_time(current_track-1);
+              state = STATE_INIT_VIS_SCREEN;
+              break;
+            }
+          case STATE_INIT_LIST_SCREEN:
+          case STATE_RUN_LIST_SCREEN:
+            {
+              select_tag_time(current_track-1);
+              state = STATE_INIT_LIST_SCREEN;
+            }
+          default:
+            {
+              select_tag_time(current_track-1);
+              state = STATE_INIT_LIST_SCREEN;
+              break;
+            }
+        }
         play_command();
         if (((browse_track) % LIST_PAGE_V) == 1)
           ++list_page;
@@ -610,6 +636,62 @@ void select_tag(short tracknumber)
   }    
   previous_track = tracknumber;         
 }
+
+void select_tag_time(short tracknumber)
+{  
+  byte text_length;
+  unsigned int index;  
+  
+  index = mp3_address[tracknumber];
+  
+  bank_select = mp3_bank[tracknumber];
+  UNROM_table[bank_select] = bank_select;  // UNROM bus conflict
+  
+  cv5000 &= 0xF0;			// GTROM
+  cv5000 |= bank_select;
+  reg5000 = cv5000;
+    
+  text_length = strlen((unsigned char *)index) + 1;
+  index += text_length;
+  text_length = strlen((unsigned char *)index) + 1;
+  index += text_length;
+  text_length = strlen((unsigned char *)index) + 1;
+  index += text_length;  
+  text_length = strlen((unsigned char *)index) + 1;
+  index += 4;
+  tag_data_index = index;
+  
+  memcpy(&tag_seconds, &mp3_tags[(tag_data_index - 0x8000) + TDB_SECONDS],4);
+
+  set_vram_update(NULL);
+  memset(ppu_buffer, 0, 34);
+  ppu_buffer[0] = MSB(NTADR_A(7,22))|NT_UPD_HORZ;
+  ppu_buffer[1] = LSB(NTADR_A(7,22));
+  ppu_buffer[2] = 20;
+  sprintf(&ppu_buffer[3], "0:00:00 / %1.1ld:", tag_seconds / 3600);
+  sprintf(&ppu_buffer[15], "%02.2ld:", tag_seconds / 60);
+  sprintf(&ppu_buffer[18], "%02.2ld", tag_seconds % 60);
+  ppu_buffer[3 + 20] = NT_UPD_EOF;
+  //set_vram_update(ppu_buffer);
+  
+  //set_vram_update(NULL);
+
+  if (previous_track != tracknumber)
+  {
+    memcpy(&tag_frame_counter, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_FRAMES], 4);
+    frame_counter = 0;  
+
+    memcpy(&sprite_velocity, &mp3_tags[(tag_data_index - 0x8000) + TDB_NTSC_BAR_192], 2);
+    sprite_velocity &= 0x0000FFFF;
+    sprite_position = 0x00200000;
+    
+    memcpy(&time_buffer[0],&ppu_buffer[0],10);
+    time_buffer[2] = 7;
+    time_buffer[10] = NT_UPD_EOF;
+  }    
+  previous_track = tracknumber;         
+}
+
 
 void update_time()
 {
