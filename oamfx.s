@@ -28,7 +28,9 @@ _vis_stars_init:
 	ldy #0
         :
         lda #$0D
-        sta $201,y        
+        sta $201,y
+        lda #$20
+        sta $202,y
         :
 	jsr _rand8
         cmp #16
