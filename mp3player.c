@@ -34,7 +34,7 @@
 #define TDB_PAL_BAR_192 	18
 
 #define LIST_PAGE_V	23
-#define LIST_TOP	15
+#define LIST_TOP	23
 #define LIST_BOTTOM	((LIST_PAGE_V) * 8)
 #define MAX_TRACK	102
 #define MAX_PAGE	MAX_TRACK / LIST_PAGE_V
@@ -342,7 +342,7 @@ void main(void)
           vram_adr(0x2000);
           vram_fill(0x00, 0x400);
           
-          temp16 = 0x2042;
+          temp16 = 0x2062;
           temp = list_page * LIST_PAGE_V;
                              
           for (i = 0; i < 23; i++)

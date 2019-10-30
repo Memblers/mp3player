@@ -29,7 +29,12 @@ _vis_stars_init:
         :
         lda #$0D
         sta $201,y        
+        :
 	jsr _rand8
+        cmp #10
+        bcc :-
+        cmp #212
+        bcs :-
         sta $200,y
         jsr _rand8
         sta $203,y
@@ -37,7 +42,7 @@ _vis_stars_init:
         iny
         iny
         iny
-        bne :-
+        bne :--
 
         :
         jsr _rand8
