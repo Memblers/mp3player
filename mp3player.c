@@ -520,7 +520,7 @@ void main(void)
       if (current_track != MAX_TRACK)
       {
         browse_track = ++current_track;
-        if (state = STATE_RUN_PLAY_SCREEN)
+        if (state == STATE_RUN_PLAY_SCREEN)
           select_tag(current_track-1);
         play_command();
         if (((browse_track) % LIST_PAGE_V) == 1)
