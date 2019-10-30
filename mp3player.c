@@ -236,7 +236,6 @@ void main(void)
 
         #define play_command(void)	\
         {	\
-              select_tag(current_track-1);	\
               if (cooldown_timer == 0)	\
               {	\
                 mp3_command(CMD_SELECT_MP3_FOLDER,(current_track >> 8),(current_track & 0xFF));	\
@@ -259,7 +258,8 @@ void main(void)
             if (current_track != MAX_TRACK)
             {
               browse_track = ++current_track;            
-              play_command();
+              select_tag(current_track-1);
+              play_command();              
               if (((browse_track) % LIST_PAGE_V) == 1)
                 ++list_page;
             }
@@ -269,8 +269,8 @@ void main(void)
             if (current_track >= 2)
             {        
               browse_track = --current_track;
-              play_command();             
-              
+              select_tag(current_track-1);              
+              play_command();              
             }
           }
           if (pad1 & PAD_SELECT)
@@ -417,19 +417,24 @@ void main(void)
             }
           }
           if ((pad1 & PAD_A) || (pad1 & PAD_START))
-          {
-            current_track = browse_track;
-            play_command();
+          {            
+            if (current_track != browse_track)	// don't retrigger same track in list mode
+            {              
+              current_track = browse_track;
+              select_tag(current_track-1);
+              play_command();
+            }
+
+              ppu_wait_nmi();
+              ppu_off();            
+              oam_clear();
+
+              vram_adr(0x2000);
+              vram_fill(0x00,0x400);
+
+              ppu_on_all();
             
-            oam_clear();
-            ppu_wait_nmi();
-            ppu_off();
-
-            vram_adr(0x2000);
-            vram_fill(0x00,0x400);
-
-            ppu_on_all();
-            state = STATE_INIT_PLAY_SCREEN;                    
+              state = STATE_INIT_PLAY_SCREEN;            
           }
 
           spr_id = 0;
@@ -514,7 +519,9 @@ void main(void)
     {
       if (current_track != MAX_TRACK)
       {
-        browse_track = ++current_track;            
+        browse_track = ++current_track;
+        if (state = STATE_RUN_PLAY_SCREEN)
+          select_tag(current_track-1);
         play_command();
         if (((browse_track) % LIST_PAGE_V) == 1)
           ++list_page;
