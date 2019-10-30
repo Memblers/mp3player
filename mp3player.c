@@ -213,7 +213,7 @@ void main(void)
           vram_adr(NTADR_A(2,3));
           vram_write("MI MEDIA PLAYER",15);
           vram_adr(NTADR_A(2,4));
-          vram_write(__DATE__ " - "__TIME__"  V0.7", 28);
+          vram_write(__DATE__ " - "__TIME__"  V1.0", 28);
           vram_adr(NTADR_A(2,6));
           vram_write("\x1E/\x1F to change tracks",20);
           vram_adr(NTADR_A(2,7));
@@ -275,7 +275,6 @@ void main(void)
           }
           if (pad1 & PAD_SELECT)
             state = STATE_INIT_LIST_SCREEN;
-            //mp3_command(CMD_SHUFFLE_PLAY,0,0);
           if (pad1 & PAD_START)
             mp3_command(CMD_ADVERT,0,4);
           if (pad1 & PAD_UP)
