@@ -415,7 +415,7 @@ void main(void)
               browse_track += LIST_PAGE_V;
               if (browse_track > MAX_TRACK)
               {                
-                selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7;
+                selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 15;
                 browse_track = MAX_TRACK;
               }
               ++list_page;
@@ -423,7 +423,7 @@ void main(void)
             }
             else	// on last page, move to last track
             {
-              selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 7;
+              selector_y_position = ((MAX_TRACK % LIST_PAGE_V) * 8) + 15;
               browse_track = MAX_TRACK;
             }
           }

@@ -31,9 +31,9 @@ _vis_stars_init:
         sta $201,y        
         :
 	jsr _rand8
-        cmp #10
+        cmp #16
         bcc :-
-        cmp #212
+        cmp #224
         bcs :-
         sta $200,y
         jsr _rand8
