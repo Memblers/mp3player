@@ -401,12 +401,18 @@ void main(void)
           if (pad1 & PAD_DOWN)
           {
             if (browse_track >= MAX_TRACK)
-            	;
+              ;
               
             else if (selector_y_position < LIST_BOTTOM)
             {
               selector_y_position += 8;
               ++browse_track;
+            }
+            else
+            {
+              ++browse_track;
+              ++list_page;
+              state = STATE_INIT_LIST_SCREEN;
             }
           }
 	  if (pad1 & PAD_UP)
@@ -415,6 +421,12 @@ void main(void)
             {
               selector_y_position -= 8;
               --browse_track;
+            }
+            else if (list_page != 0)
+            {
+              --browse_track;
+              --list_page;
+              state = STATE_INIT_LIST_SCREEN;
             }
           }
           if ((pad1 & PAD_A) || (pad1 & PAD_START))
