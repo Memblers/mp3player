@@ -35,7 +35,7 @@
 
 #define LIST_PAGE_V	23
 #define LIST_TOP	23
-#define LIST_BOTTOM	((LIST_PAGE_V) * 8)
+#define LIST_BOTTOM	((LIST_PAGE_V) * 8) + 8
 #define MAX_TRACK	102
 #define MAX_PAGE	MAX_TRACK / LIST_PAGE_V
 #define COOLDOWN_LENGTH 30
