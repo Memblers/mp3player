@@ -39,8 +39,6 @@ INES_SRAM   = 0 ; 1 = battery backed SRAM at $6000-7FFF
 
 
 .segment "ZEROPAGE"
-; $00-$04 reserved for emergency interrupt (vectors are all $FF)
-
    temp_x: .res 1
    temp_y: .res 1
    temp_lo: .res 1
