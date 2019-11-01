@@ -84,6 +84,8 @@ void __fastcall__ oam_bar_init(void);
 void __fastcall__ oam_bar_run(void);
 void __fastcall__ vis_stars_init(void);
 void __fastcall__ vis_stars_run(void);
+void __fastcall__ vis_sine_init(void);
+void __fastcall__ vis_sine_run(void);
 void select_tag(short tracknumber);
 void select_tag_time(short tracknumber);
 
@@ -98,7 +100,7 @@ extern byte sine[];
 void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
 
-byte state = STATE_INIT_PLAY_SCREEN;
+byte state = STATE_INIT_VIS_SCREEN; //STATE_INIT_PLAY_SCREEN;
 byte ppu_buffer[128];
 byte str_buffer[128];
 byte time_buffer[16];
@@ -470,7 +472,6 @@ void main(void)
       case STATE_INIT_VIS_SCREEN:
         {
           set_rand(frame_counter);
-          vis_stars_init();
           
           h_scroll_ext = 0;
           
@@ -493,6 +494,10 @@ void main(void)
           vram_write(&str_buffer[0], 32);
           vram_adr(0x2200);
           vram_write(&str_buffer[0x20], 32);
+          
+          //vis_stars_init();
+          vis_sine_init();
+
           
           ppu_wait_nmi();
           ppu_on_all();   
@@ -521,7 +526,8 @@ void main(void)
           h_scroll_ext += SCROLLER_SPEED; 
           scroll((h_scroll_ext >> 8),0);
 
-          vis_stars_run();
+          //vis_stars_run();
+          vis_sine_run();
           break;
         }
       default:

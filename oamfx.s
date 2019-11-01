@@ -1,7 +1,8 @@
 .export _oam_bar_init,_oam_bar_run
 .export _vis_stars_init, _vis_stars_run
+.export _vis_sine_init, _vis_sine_run
 .export _sine
-.import _selector_y_position, _temp, _spr_id, _rand8
+.import _selector_y_position, _temp, _spr_id, _rand8, _str_buffer
 
 .segment "ZEROPAGE"
 testval: .res 1
@@ -9,6 +10,12 @@ testval: .res 1
 .segment "DATA"
 oam_x_pos_lo:	.res $100
 star_speeds:	.res $100
+; overlay
+cosine = star_speeds
+rate_lo = oam_x_pos_lo
+rate2_lo = oam_x_pos_lo + 1
+table_position = oam_x_pos_lo + 2
+effect_rate = oam_x_pos_lo +3
 
 .segment "RODATA"
 sine:
@@ -76,7 +83,92 @@ _vis_stars_run:
         sty _spr_id
         rts
         
+_vis_sine_init:
+	ldy #0        
+        :
+        lda #'.'
+        sta $201,y
+        lda #$22
+        sta $202,y
+        iny
+        iny
+        iny
+        iny
+        bne :-
+	
+	ldy #0
+        ldx #0
+        :
+        lda _str_buffer,x ;#'.'
+        beq @end
+        inx
+        sta $201,y
+        iny
+        iny
+        iny
+        iny
+        bne :-
+      @end:
         
+        ldy #$40
+        :
+        lda sine,y
+        sta cosine - $40,y
+        iny
+        bne :-
+        :
+        lda sine,y
+        sta cosine + $C0,y
+        iny
+        cpy #$40
+        bne :-
+        
+        jsr _rand8
+        and #3
+        tax
+        inx
+        stx effect_rate        
+        rts      
+        
+SPEED = $00c0
+SPEED2 = $0010
+
+_vis_sine_run:
+	ldy #0        
+        ldx table_position
+        :
+        dey
+        dey
+        dey
+        dey
+        lda sine,x
+        sec
+        sbc table_position
+        clc
+        adc rate2_lo
+        sta $200,y
+        lda cosine,x
+        sec
+        sbc table_position
+        sta $203,y
+        txa
+        clc
+        adc effect_rate
+        tax
+        cpy #0
+        bne :-
+        lda rate_lo
+        clc
+        adc #<SPEED
+        sta rate_lo
+        lda table_position
+        adc #>SPEED
+        sta table_position
+;	inc table_position
+	
+        inc rate2_lo
+
+	rts
         
         
 
