@@ -10,12 +10,11 @@ testval: .res 1
 .segment "DATA"
 oam_x_pos_lo:	.res $100
 star_speeds:	.res $100
-; overlay
-cosine = star_speeds
-rate_lo = oam_x_pos_lo
-rate2_lo = oam_x_pos_lo + 1
-table_position = oam_x_pos_lo + 2
-effect_rate = oam_x_pos_lo +3
+cosine = star_speeds	; overlay
+rate_lo: .res 1
+rate2_lo: .res 1
+table_position: .res 1
+effect_rate: .res 1
 
 .segment "RODATA"
 sine:
@@ -97,7 +96,7 @@ _vis_sine_init:
         bne :-
         
         jsr _rand8
-        and #3
+        and #7
         tax
         inx
         stx effect_rate        
@@ -121,6 +120,12 @@ _vis_sine_init:
         jmp @end
         
       @textmode:
+      	lda effect_rate
+        cmp #5
+        bcc :+
+        jmp _vis_stars_init
+        
+        :
 	
 	ldy #0
         ldx #0
@@ -155,6 +160,12 @@ SPEED = $00c0
 SPEED2 = $0010
 
 _vis_sine_run:
+	lda effect_rate
+        cmp #5
+        bcc :+
+        jmp _vis_stars_run
+        
+        :
 	ldy #0        
         ldx table_position
         :
