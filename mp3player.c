@@ -100,7 +100,7 @@ extern byte sine[];
 void update_time(void);
 void hex_display(byte value, byte x_position, byte y_position);
 
-byte state = STATE_INIT_VIS_SCREEN; //STATE_INIT_PLAY_SCREEN;
+byte state = STATE_INIT_PLAY_SCREEN;
 byte ppu_buffer[128];
 byte str_buffer[128];
 byte time_buffer[16];

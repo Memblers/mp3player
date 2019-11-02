@@ -95,6 +95,32 @@ _vis_sine_init:
         iny
         iny
         bne :-
+        
+        jsr _rand8
+        and #3
+        tax
+        inx
+        stx effect_rate        
+        dex
+        bne @textmode
+        jsr _rand8
+        and #3
+        ora #$20
+        tax
+        ldy #0        
+        :
+        lda #$94 ;'/'
+        sta $201,y
+        txa
+        sta $202,y
+        iny
+        iny
+        iny
+        iny
+        bne :-
+        jmp @end
+        
+      @textmode:
 	
 	ldy #0
         ldx #0
@@ -123,11 +149,6 @@ _vis_sine_init:
         cpy #$40
         bne :-
         
-        jsr _rand8
-        and #3
-        tax
-        inx
-        stx effect_rate        
         rts      
         
 SPEED = $00c0
